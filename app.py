@@ -83,6 +83,55 @@ def init_db():
     conn.commit()
     conn.close()
 
+
+# Ensure the database and sample data exist when the module is imported.
+# This helps WSGI servers (gunicorn) on platforms like render.com where
+# they import the module instead of running it as __main__.
+MARKER_FILE = str(Path(__file__).parent / 'dati_jau_pievienoti.txt')
+
+def ensure_db_and_seed():
+    # Initialize DB if missing
+    if not Path(DATABASE_PATH).exists():
+        init_db()
+
+    # If marker file doesn't exist, seed sample data (idempotent using INSERT OR IGNORE)
+    if not Path(MARKER_FILE).exists():
+        conn = get_db_connection()
+        c = conn.cursor()
+        paraugu_grāmatas = [
+            ('978-9934-0-00001', 'Meža diena', 'Imants Ziedonis', 1991, 'Dzeja', 3),
+            ('978-9934-0-00002', 'Putnu pēdas smiltīs', 'Ināra Čaklā', 1995, 'Romans', 2),
+            ('978-9934-0-00003', 'Balto nakšu vīrs', 'Sergejs Timofejevs', 1994, 'Romans', 2),
+            ('978-9934-0-00004', 'Mājas svečtur dega', 'Zoja Anete Blūmfelde', 2001, 'Detektīvs', 1),
+            ('978-9934-0-00005', '1984', 'George Orwell', 1949, 'Zinātniskā fantastika', 3),
+        ]
+        for isbn, nosaukums, autors, gads, žanrs, kopijas in paraugu_grāmatas:
+            c.execute('''
+                INSERT OR IGNORE INTO grāmata (isbn, nosaukums, autors, izdošanas_gads, žanrs, kopiju_skaits, pieejamās_kopijas)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (isbn, nosaukums, autors, gads, žanrs, kopijas, kopijas))
+
+        paraugu_lietotāji = [
+            ('Jānis', 'Bērziņš', 'janis@example.com', '+371-20001111'),
+            ('Ināra', 'Gaile', 'inara@example.com', '+371-20002222'),
+            ('Andrejs', 'Soms', 'andrejs@example.com', '+371-20003333'),
+        ]
+        for vārds, uzvārds, e_pasts, telefons in paraugu_lietotāji:
+            c.execute('''
+                INSERT OR IGNORE INTO lietotājs (vārds, uzvārds, e_pasts, telefons)
+                VALUES (?, ?, ?, ?)
+            ''', (vārds, uzvārds, e_pasts, telefons))
+
+        conn.commit()
+        conn.close()
+
+        # Create marker file so seeding doesn't run again
+        with open(MARKER_FILE, 'w', encoding='utf-8') as f:
+            f.write('Dati pievienoti')
+
+
+# Run DB init & seed at import time so WSGI servers (gunicorn) have DB ready
+ensure_db_and_seed()
 # ============= GRĀMATU VADĪBA =============
 
 @app.route('/api/grāmatas', methods=['GET'])
