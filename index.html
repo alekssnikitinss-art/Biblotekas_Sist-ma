@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 Bibliotēka - Grāmatu Vadības Sistēma</title>
+    <style>
+        :root {
+            --primary: #2d3436;
+            --secondary: #d63031;
+            --accent: #00b894;
+            --light-bg: #f5f6fa;
+            --card-bg: #ffffff;
+            --text-dark: #2d3436;
+            --text-light: #636e72;
+            --border: #dfe6e9;
+            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, var(--primary) 0%, #1e272e 100%);
+            color: white;
+            padding: 2rem;
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            padding: 0.75rem 1.5rem;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid transparent;
+            color: white;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            background: var(--accent);
+            border-color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 184, 148, 0.3);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* Tab Sections */
+        .section {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            border-left: 4px solid var(--accent);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 184, 148, 0.1);
+            background: rgba(0, 184, 148, 0.02);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Button Styles */
+        .btn {
+            padding: 0.875rem 1.75rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            display: inline-block;
+            text-align: center;
+            gap: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent) 0%, #00a674 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 184, 148, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 184, 148, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--secondary) 0%, #e84032 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(214, 48, 49, 0.3);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(214, 48, 49, 0.4);
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        /* Table Styles */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+        }
+
+        thead {
+            background: linear-gradient(135deg, var(--primary) 0%, #1e272e 100%);
+            color: white;
+        }
+
+        th {
+            padding: 1.25rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 3px solid var(--accent);
+        }
+
+        td {
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:hover {
+            background: rgba(0, 184, 148, 0.05);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Badge Styles */
+        .badge {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(0, 184, 148, 0.2);
+            color: #00a674;
+        }
+
+        .badge-danger {
+            background: rgba(214, 48, 49, 0.2);
+            color: #d63031;
+        }
+
+        .badge-warning {
+            background: rgba(255, 159, 64, 0.2);
+            color: #ff9f40;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--accent) 0%, #00a674 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(0);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 28px rgba(0, 184, 148, 0.3);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        /* Search Bar */
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .search-bar input {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .search-bar select {
+            min-width: 150px;
+        }
+
+        /* Alert Messages */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .alert-success {
+            background: rgba(0, 184, 148, 0.2);
+            color: #00a674;
+            border-left: 4px solid var(--accent);
+        }
+
+        .alert-danger {
+            background: rgba(214, 48, 49, 0.2);
+            color: #d63031;
+            border-left: 4px solid var(--secondary);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: var(--primary);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-light);
+            transition: color 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 0.9rem;
+            }
+
+            th, td {
+                padding: 0.75rem;
+            }
+
+            .nav-tabs {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .nav-btn {
+                flex: 1;
+                padding: 0.5rem 1rem;
+                font-size: 0.85rem;
+            }
+
+            .container {
+                padding: 0 1rem;
+                margin: 1rem auto;
+            }
+
+            .card {
+                padding: 1.5rem;
+            }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(0, 184, 148, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--accent);
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <div class="logo">📚 Bibliotēka</div>
+            <div class="nav-tabs">
+                <button class="nav-btn active" onclick="switchTab('dashboard')">📊 Mājaslapa</button>
+                <button class="nav-btn" onclick="switchTab('grāmatas')">📖 Grāmatas</button>
+                <button class="nav-btn" onclick="switchTab('lietotāji')">👥 Lietotāji</button>
+                <button class="nav-btn" onclick="switchTab('aizdevumi')">🔄 Aizdevumi</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section active">
+            <h2 style="color: white; margin-bottom: 2rem; font-size: 2rem;">📊 Pārskatīts</h2>
+            <div class="stats-grid" id="statsContainer"></div>
+
+            <div class="card">
+                <h3 class="card-title">🏆 Populārākās Grāmatas</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nosaukums</th>
+                            <th>Autors</th>
+                            <th>Aizdevumi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="popularBooksTable">
+                        <tr><td colspan="3" style="text-align: center;">Ielāde...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Books Section -->
+        <section id="grāmatas" class="section">
+            <div class="card">
+                <h2 class="card-title">➕ Pievienot Jaunu Grāmatu</h2>
+                <form id="addBookForm" onsubmit="addBook(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>ISBN *</label>
+                            <input type="text" id="bookIsbn" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nosaukums *</label>
+                            <input type="text" id="bookTitle" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Autors *</label>
+                            <input type="text" id="bookAuthor" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Izdošanas gads</label>
+                            <input type="number" id="bookYear" min="1000" max="2099">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Žanrs</label>
+                            <input type="text" id="bookGenre">
+                        </div>
+                        <div class="form-group">
+                            <label>Kopiju skaits</label>
+                            <input type="number" id="bookCopies" value="1" min="1">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">✓ Pievienot Grāmatu</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">🔍 Grāmatu Katalogs</h2>
+                <div class="search-bar">
+                    <input type="text" id="bookSearch" placeholder="Meklēt pēc nosaukuma, autora vai ISBN...">
+                    <select id="genreFilter" onchange="loadBooks()">
+                        <option value="">Visi žanri</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="loadBooks()">🔍 Meklēt</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ISBN</th>
+                            <th>Nosaukums</th>
+                            <th>Autors</th>
+                            <th>Žanrs</th>
+                            <th>Pieejamas</th>
+                            <th>Darbības</th>
+                        </tr>
+                    </thead>
+                    <tbody id="booksTable">
+                        <tr><td colspan="6" style="text-align: center;">Ielāde...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Users Section -->
+        <section id="lietotāji" class="section">
+            <div class="card">
+                <h2 class="card-title">➕ Reģistrēt Jaunu Lietotāju</h2>
+                <form id="addUserForm" onsubmit="addUser(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Vārds *</label>
+                            <input type="text" id="userName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Uzvārds *</label>
+                            <input type="text" id="userSurname" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>E-pasts *</label>
+                            <input type="email" id="userEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Telefons</label>
+                            <input type="tel" id="userPhone">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">✓ Reģistrēt Lietotāju</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">👥 Reģistrētie Lietotāji</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Vārds</th>
+                            <th>E-pasts</th>
+                            <th>Telefons</th>
+                            <th>Reģ. datums</th>
+                            <th>Darbības</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTable">
+                        <tr><td colspan="5" style="text-align: center;">Ielāde...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Loans Section -->
+        <section id="aizdevumi" class="section">
+            <div class="card">
+                <h2 class="card-title">➕ Reģistrēt Aizdevumu</h2>
+                <form id="addLoanForm" onsubmit="addLoan(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Grāmata (ISBN) *</label>
+                            <input type="text" id="loanIsbn" placeholder="Ievadiet ISBN" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Lietotāja ID *</label>
+                            <input type="number" id="loanUserId" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">✓ Reģistrēt Aizdevumu</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">🔄 Aizdevumi</h2>
+                <div class="search-bar">
+                    <select id="loanStatusFilter" onchange="loadLoans()">
+                        <option value="visi">Visi aizdevumi</option>
+                        <option value="aktīvs">Aktīvie aizdevumi</option>
+                        <option value="atgriezts">Atgrieztie aizdevumi</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="loadLoans()">🔄 Atjaunināt</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Grāmata</th>
+                            <th>Lietotājs</th>
+                            <th>Aizdevuma datums</th>
+                            <th>Atgr. termiņš</th>
+                            <th>Statuss</th>
+                            <th>Darbības</th>
+                        </tr>
+                    </thead>
+                    <tbody id="loansTable">
+                        <tr><td colspan="6" style="text-align: center;">Ielāde...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <!-- Alert Container -->
+    <div id="alertContainer" style="position: fixed; bottom: 2rem; right: 2rem; max-width: 400px; z-index: 999;"></div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+
+        // Tab Switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'dashboard') loadDashboard();
+            else if (tabName === 'grāmatas') loadBooks();
+            else if (tabName === 'lietotāji') loadUsers();
+            else if (tabName === 'aizdevumi') loadLoans();
+        }
+
+        // Alert Function
+        function showAlert(message, type = 'success') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `${type === 'success' ? '✓' : '✗'} ${message}`;
+            alertContainer.appendChild(alert);
+            setTimeout(() => alert.remove(), 3000);
+        }
+
+        // Dashboard
+        async function loadDashboard() {
+            try {
+                const response = await fetch(`${API_URL}/statistika`);
+                const stats = await response.json();
+
+                const statsContainer = document.getElementById('statsContainer');
+                statsContainer.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.grāmatu_skaits}</div>
+                        <div class="stat-label">📖 Grāmatas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.lietotāju_skaits}</div>
+                        <div class="stat-label">👥 Lietotāji</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.aktīvie_aizdevumi}</div>
+                        <div class="stat-label">🔄 Aktīvie aizdevumi</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${stats.nokavētie_aizdevumi}</div>
+                        <div class="stat-label">⚠️ Nokavēti</div>
+                    </div>
+                `;
+
+                const popularBooksTable = document.getElementById('popularBooksTable');
+                if (stats.populārākās_grāmatas.length > 0) {
+                    popularBooksTable.innerHTML = stats.populārākās_grāmatas
+                        .map(book => `<tr>
+                            <td>${book.nosaukums}</td>
+                            <td>${book.autors}</td>
+                            <td><strong>${book.aizdevumu_skaits}</strong></td>
+                        </tr>`).join('');
+                }
+            } catch (error) {
+                console.error('Kļūda:', error);
+                showAlert('Kļūda datu ielādē', 'danger');
+            }
+        }
+
+        // Books
+        async function loadBooks() {
+            try {
+                const searchText = document.getElementById('bookSearch').value;
+                const genre = document.getElementById('genreFilter').value;
+                const response = await fetch(`${API_URL}/grāmatas/meklēt?q=${searchText}&žanrs=${genre}`);
+                const books = await response.json();
+
+                const booksTable = document.getElementById('booksTable');
+                booksTable.innerHTML = books.map(book => `<tr>
+                    <td><code>${book.isbn}</code></td>
+                    <td><strong>${book.nosaukums}</strong></td>
+                    <td>${book.autors}</td>
+                    <td>${book.žanrs || '-'}</td>
+                    <td>
+                        <span class="badge ${book.pieejamās_kopijas > 0 ? 'badge-success' : 'badge-danger'}">
+                            ${book.pieejamās_kopijas}/${book.kopiju_skaits}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-danger btn-small" onclick="deleteBook('${book.isbn}')">🗑️ Dzēst</button>
+                    </td>
+                </tr>`).join('');
+
+                // Load genres
+                const genreResponse = await fetch(`${API_URL}/grāmatas/žanri`);
+                const genres = await genreResponse.json();
+                const genreFilter = document.getElementById('genreFilter');
+                const currentGenre = genreFilter.value;
+                genreFilter.innerHTML = '<option value="">Visi žanri</option>' +
+                    genres.map(g => `<option value="${g}" ${g === currentGenre ? 'selected' : ''}>${g}</option>`).join('');
+            } catch (error) {
+                console.error('Kļūda:', error);
+                showAlert('Kļūda datu ielādē', 'danger');
+            }
+        }
+
+        async function addBook(event) {
+            event.preventDefault();
+            try {
+                const response = await fetch(`${API_URL}/grāmatas`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        isbn: document.getElementById('bookIsbn').value,
+                        nosaukums: document.getElementById('bookTitle').value,
+                        autors: document.getElementById('bookAuthor').value,
+                        izdošanas_gads: document.getElementById('bookYear').value,
+                        žanrs: document.getElementById('bookGenre').value,
+                        kopiju_skaits: document.getElementById('bookCopies').value
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert('Grāmata pievienota!', 'success');
+                    document.getElementById('addBookForm').reset();
+                    loadBooks();
+                } else {
+                    showAlert(result.kļūda || 'Kļūda', 'danger');
+                }
+            } catch (error) {
+                console.error('Kļūda:', error);
+                showAlert('Kļūda', 'danger');
+            }
+        }
+
+        async function deleteBook(isbn) {
+            if (confirm('Vai tiešam dzēst šo grāmatu?')) {
+                try {
+                    const response = await fetch(`${API_URL}/grāmatas/${isbn}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        showAlert('Grāmata dzēsta', 'success');
+                        loadBooks();
+                    } else {
+                        const result = await response.json();
+                        showAlert(result.kļūda || 'Kļūda', 'danger');
+                    }
+                } catch (error) {
+                    showAlert('Kļūda', 'danger');
+                }
+            }
+        }
+
+        // Users
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${API_URL}/lietotāji`);
+                const users = await response.json();
+
+                const usersTable = document.getElementById('usersTable');
+                usersTable.innerHTML = users.map(user => `<tr>
+                    <td><strong>${user.vārds} ${user.uzvārds}</strong></td>
+                    <td>${user.e_pasts}</td>
+                    <td>${user.telefons || '-'}</td>
+                    <td>${new Date(user.reģistrācijas_datums).toLocaleDateString('lv-LV')}</td>
+                    <td>
+                        <button class="btn btn-danger btn-small" onclick="deleteUser(${user.id})">🗑️ Dzēst</button>
+                    </td>
+                </tr>`).join('');
+            } catch (error) {
+                console.error('Kļūda:', error);
+                showAlert('Kļūda datu ielādē', 'danger');
+            }
+        }
+
+        async function addUser(event) {
+            event.preventDefault();
+            try {
+                const response = await fetch(`${API_URL}/lietotāji`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        vārds: document.getElementById('userName').value,
+                        uzvārds: document.getElementById('userSurname').value,
+                        e_pasts: document.getElementById('userEmail').value,
+                        telefons: document.getElementById('userPhone').value
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert('Lietotājs reģistrēts!', 'success');
+                    document.getElementById('addUserForm').reset();
+                    loadUsers();
+                } else {
+                    showAlert(result.kļūda || 'Kļūda', 'danger');
+                }
+            } catch (error) {
+                showAlert('Kļūda', 'danger');
+            }
+        }
+
+        async function deleteUser(id) {
+            if (confirm('Vai tiešam dzēst šo lietotāju?')) {
+                try {
+                    const response = await fetch(`${API_URL}/lietotāji/${id}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        showAlert('Lietotājs dzēsts', 'success');
+                        loadUsers();
+                    } else {
+                        const result = await response.json();
+                        showAlert(result.kļūda || 'Kļūda', 'danger');
+                    }
+                } catch (error) {
+                    showAlert('Kļūda', 'danger');
+                }
+            }
+        }
+
+        // Loans
+        async function loadLoans() {
+            try {
+                const status = document.getElementById('loanStatusFilter').value;
+                const response = await fetch(`${API_URL}/aizdevumi?statuss=${status}`);
+                const loans = await response.json();
+
+                const loansTable = document.getElementById('loansTable');
+                loansTable.innerHTML = loans.map(loan => {
+                    const today = new Date();
+                    const dueDate = new Date(loan.paredzamais_atgriešanas_datums);
+                    const isOverdue = loan.statuss === 'aktīvs' && dueDate < today;
+
+                    return `<tr style="background-color: ${isOverdue ? 'rgba(214, 48, 49, 0.1)' : ''}">
+                        <td><strong>${loan.nosaukums}</strong></td>
+                        <td>${loan.vārds} ${loan.uzvārds}</td>
+                        <td>${new Date(loan.aizdevuma_datums).toLocaleDateString('lv-LV')}</td>
+                        <td>${isOverdue ? '⚠️ ' : ''}${new Date(loan.paredzamais_atgriešanas_datums).toLocaleDateString('lv-LV')}</td>
+                        <td><span class="badge ${loan.statuss === 'aktīvs' ? 'badge-warning' : 'badge-success'}">${loan.statuss}</span></td>
+                        <td>
+                            ${loan.statuss === 'aktīvs' ? `<button class="btn btn-primary btn-small" onclick="returnLoan(${loan.id})">✓ Atgriezt</button>` : ''}
+                        </td>
+                    </tr>`;
+                }).join('');
+            } catch (error) {
+                console.error('Kļūda:', error);
+                showAlert('Kļūda datu ielādē', 'danger');
+            }
+        }
+
+        async function addLoan(event) {
+            event.preventDefault();
+            try {
+                const response = await fetch(`${API_URL}/aizdevumi`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        isbn: document.getElementById('loanIsbn').value,
+                        lietotāja_id: document.getElementById('loanUserId').value
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    showAlert('Aizdevums reģistrēts!', 'success');
+                    document.getElementById('addLoanForm').reset();
+                    loadLoans();
+                } else {
+                    showAlert(result.kļūda || 'Kļūda', 'danger');
+                }
+            } catch (error) {
+                showAlert('Kļūda', 'danger');
+            }
+        }
+
+        async function returnLoan(id) {
+            try {
+                const response = await fetch(`${API_URL}/aizdevumi/${id}/atgriezt`, { method: 'POST' });
+                if (response.ok) {
+                    showAlert('Grāmata atgriezta!', 'success');
+                    loadLoans();
+                } else {
+                    showAlert('Kļūda', 'danger');
+                }
+            } catch (error) {
+                showAlert('Kļūda', 'danger');
+            }
+        }
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', loadDashboard);
+    </script>
+</body>
+</html>
