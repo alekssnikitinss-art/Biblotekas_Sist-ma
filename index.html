@@ -681,7 +681,8 @@
     <div id="alertContainer" style="position: fixed; bottom: 2rem; right: 2rem; max-width: 400px; z-index: 999;"></div>
 
     <script>
-        const API_URL = 'http://localhost:5000/api';
+    // Prefer the same origin that served the page. If opened via file:// fallback to localhost:5000
+    const API_URL = (location.protocol === 'file:') ? 'http://localhost:5000/api' : `${location.origin}/api`;
 
         // Tab Switching
         function switchTab(tabName) {

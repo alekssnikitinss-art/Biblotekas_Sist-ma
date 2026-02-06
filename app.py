@@ -20,7 +20,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Datubāzes konfigurācija
-DATABASE_PATH = 'biblioteka.db'
+DATABASE_PATH = str(Path(__file__).parent / 'biblioteka.db')
 
 def get_db_connection():
     """Savienojas ar SQLite datubāzi"""
@@ -480,4 +480,9 @@ if __name__ == '__main__':
         with open('dati_jau_pievienoti.txt', 'w') as f:
             f.write('Dati pievienoti')
     
-    app.run(debug=True, port=5000)
+    # Host and port can be overridden with environment variables HOST and PORT
+    host = os.environ.get('HOST', '0.0.0.0')
+    port = int(os.environ.get('PORT', 5000))
+    print(f"Starting Bibliotēkas API on http://{host}:{port} (Ctrl+C to stop)")
+    # threaded=True helps with concurrent browser requests during development
+    app.run(host=host, port=port, debug=True, threaded=True)

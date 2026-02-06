@@ -1,0 +1,87 @@
+Start instructions for Bibliotēkas_Sistēma (Windows PowerShell)
+
+This file contains the minimal steps to get the backend + frontend running locally and to verify the app works.
+
+Prerequisites
+- Python 3.8+ installed and available as `python` (you appear to have 3.13)
+- Internet access to install packages, or install from wheels offline if required
+
+1) (Optional) Create and activate a virtual environment (recommended)
+PowerShell:
+
+    # create venv folder named .venv
+    python -m venv .venv
+    # activate venv in PowerShell
+    .\.venv\Scripts\Activate.ps1
+
+2) Install dependencies
+
+    python -m pip install --upgrade pip
+    python -m pip install flask flask-cors
+
+(If you prefer a requirements file, run: `python -m pip freeze > requirements.txt` after installing.)
+
+3) Start the backend server
+
+From the project root (where `app.py` is located):
+
+    cd 'c:\Users\Dators\Bibloteka\Biblotekas_Sist-ma'
+    python .\app.py
+
+Notes:
+- By default the server will bind to host 0.0.0.0 and port 5000. The script prints the startup URL.
+- To bind only to localhost, run:
+
+    $env:HOST='127.0.0.1'; python .\app.py
+
+- To change port, e.g. 8000:
+
+    $env:PORT='8000'; python .\app.py
+
+4) Open the app in your browser (recommended)
+
+Open the UI served by Flask (same origin as the API):
+
+    http://127.0.0.1:5000/
+
+Important: Do NOT open `index.html` directly via file:// if you want same-origin API calls; browse to the Flask URL above so the frontend fetches `/api/...` on the same origin.
+
+5) Quick API checks (PowerShell)
+
+While the server is running in a separate terminal, test endpoints:
+
+    Invoke-RestMethod -Uri 'http://127.0.0.1:5000/api/statistika' -Method GET
+    Invoke-RestMethod -Uri 'http://127.0.0.1:5000/api/grāmatas' -Method GET
+
+These should return JSON (or an empty list/object) rather than connection errors.
+
+6) Troubleshooting
+
+- "ERR_CONNECTION_REFUSED" in browser or "Unable to connect" in PowerShell:
+  - Ensure `python .\app.py` is running and did not exit with an error.
+  - Check the terminal where you started the server for any exception traces.
+  - Confirm the server printed something like `* Running on http://127.0.0.1:5000`.
+
+- Missing package errors (ModuleNotFoundError: No module named 'flask_cors'):
+  - Run `python -m pip install flask-cors`
+
+- Port already in use:
+  - Choose another port: `$env:PORT='8000'; python .\app.py`
+  - Or find and stop the process occupying 5000 (use `netstat -a -n -o | findstr ":5000"` and check PID in Task Manager).
+
+- Firewall blocks access:
+  - For local dev, binding to `127.0.0.1` avoids opening firewall to the network.
+  - If you need remote access, allow the port in Windows Firewall or run behind a proper server.
+
+7) Helpful dev tips
+
+- If you prefer to run the server in the background, start it in a separate terminal and keep that terminal open.
+- To seed or reset the DB, delete `biblioteka.db` and `dati_jau_pievienoti.txt` then restart the server. The script will recreate DB and seed sample data.
+
+8) Optional additions you can make
+
+- Add `requirements.txt` (pip freeze) so others can install dependencies with `pip install -r requirements.txt`.
+- Create `run.ps1` for convenience containing the recommended env setup and `python .\app.py` command.
+- Add a health endpoint `/api/health` if you want a single lightweight check for monitoring.
+
+If you'd like, I can create a `requirements.txt` and `run.ps1` for you now; tell me which you'd prefer and I'll add them.
