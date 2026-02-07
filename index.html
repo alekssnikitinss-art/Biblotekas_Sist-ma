@@ -684,7 +684,7 @@
     // Prefer the same origin that served the page. If opened via file:// fallback to localhost:5000
     const API_URL = (location.protocol === 'file:') ? 'http://localhost:5000/api' : `${location.origin}/api`;
 
-        // Tab Switching
+    // Tab Switching
         function switchTab(tabName) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -967,8 +967,23 @@
             }
         }
 
-        // Initial load
-        document.addEventListener('DOMContentLoaded', loadDashboard);
+        // On load, check whether admin token is required; if so, hide add forms and surface admin link.
+        async function init(){
+            try{
+                const cfg = await fetch(`${API_URL}/config`).then(r=>r.json());
+                if(cfg.admin_required){
+                    // disable forms on main UI and show admin page hint
+                    document.querySelectorAll('form').forEach(f => f.querySelectorAll('input,button').forEach(el => el.disabled = true));
+                    const adminNotice = document.createElement('div');
+                    adminNotice.className = 'card';
+                    adminNotice.innerHTML = '<strong>Admin actions are restricted.</strong> Use <a href="/admin.html">Admin panel</a> to manage books and users.';
+                    document.querySelector('.container').prepend(adminNotice);
+                }
+            }catch(e){ /* ignore */ }
+            loadDashboard();
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>

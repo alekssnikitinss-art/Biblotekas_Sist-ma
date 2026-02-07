@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>📚 Bibliotēkas Admin</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 2rem; background:#f7f9fc }
+        .card { background:white; padding:1rem 1.5rem; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.06); margin-bottom:1rem }
+        .row { display:flex; gap:1rem; align-items:center }
+        input, select { padding:0.5rem; border-radius:6px; border:1px solid #ddd }
+        button { padding:0.5rem 0.9rem; border-radius:6px; border:none; background:#00a674; color:white }
+        table { width:100%; border-collapse:collapse }
+        th,td { padding:0.5rem; border-bottom:1px solid #eee }
+    </style>
+</head>
+<body>
+    <h1>Bibliotēkas Admin</h1>
+
+    <div class="card" id="loginCard">
+        <div class="row">
+            <input id="adminToken" type="password" placeholder="Enter admin token">
+            <button onclick="login()">Login</button>
+            <button onclick="logout()">Logout</button>
+        </div>
+        <p id="loginMsg" style="color:#666; margin-top:0.5rem">Token stored in-memory only this page session.</p>
+    </div>
+
+    <div class="card">
+        <h3>Books</h3>
+        <div style="display:flex; gap:1rem; margin-bottom:0.5rem">
+            <input id="b_isbn" placeholder="ISBN">
+            <input id="b_title" placeholder="Title">
+            <input id="b_author" placeholder="Author">
+            <input id="b_genre" placeholder="Genre">
+            <input id="b_copies" type="number" value="1" style="width:80px">
+            <button onclick="addBook()">Add</button>
+        </div>
+        <div style="max-height:300px; overflow:auto">
+            <table><thead><tr><th>ISBN</th><th>Title</th><th>Author</th><th>Genre</th><th>Copies</th><th></th></tr></thead><tbody id="booksTable"></tbody></table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Users</h3>
+        <div style="display:flex; gap:1rem; margin-bottom:0.5rem">
+            <input id="u_name" placeholder="Name">
+            <input id="u_surname" placeholder="Surname">
+            <input id="u_email" placeholder="Email">
+            <input id="u_phone" placeholder="Phone">
+            <button onclick="addUser()">Add</button>
+        </div>
+        <div style="max-height:300px; overflow:auto">
+            <table><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th></th></tr></thead><tbody id="usersTable"></tbody></table>
+        </div>
+    </div>
+
+    <script>
+        let token = null;
+
+        function login(){
+            token = document.getElementById('adminToken').value.trim();
+            if(!token) return alert('Enter token');
+            document.getElementById('loginMsg').textContent = 'Token set. Admin actions enabled.';
+            loadBooks(); loadUsers();
+        }
+        function logout(){ token = null; document.getElementById('loginMsg').textContent = 'Logged out.'; }
+
+        async function apiFetch(path, opts={}){
+            opts.headers = opts.headers || {};
+            if(token) opts.headers['X-Admin-Token'] = token;
+            const res = await fetch('/api'+path, opts);
+            if(!res.ok){
+                const body = await res.json().catch(()=>({}));
+                throw new Error(body.kļūda || res.statusText);
+            }
+            return res.json();
+        }
+
+        async function loadBooks(){
+            try{
+                const books = await apiFetch('/grāmatas');
+                const tb = document.getElementById('booksTable');
+                tb.innerHTML = books.map(b=>`<tr><td>${b.isbn}</td><td>${b.nosaukums}</td><td>${b.autors}</td><td>${b.žanrs||''}</td><td>${b.kopiju_skaits}</td><td><button onclick="delBook('${b.isbn}')">Delete</button></td></tr>`).join('');
+            }catch(e){ alert('Error: '+e.message); }
+        }
+        async function addBook(){
+            try{
+                await apiFetch('/grāmatas', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ isbn:document.getElementById('b_isbn').value, nosaukums:document.getElementById('b_title').value, autors:document.getElementById('b_author').value, žanrs:document.getElementById('b_genre').value, kopiju_skaits: parseInt(document.getElementById('b_copies').value||1,10) }) });
+                loadBooks();
+            }catch(e){ alert('Error: '+e.message); }
+        }
+        async function delBook(isbn){ if(!confirm('Delete?')) return; try{ await apiFetch(`/grāmatas/${isbn}`, { method:'DELETE' }); loadBooks(); }catch(e){ alert('Error: '+e.message); }}
+
+        async function loadUsers(){
+            try{
+                const users = await apiFetch('/lietotāji');
+                const tb = document.getElementById('usersTable');
+                tb.innerHTML = users.map(u=>`<tr><td>${u.vārds} ${u.uzvārds}</td><td>${u.e_pasts}</td><td>${u.telefons||''}</td><td><button onclick="delUser(${u.id})">Delete</button></td></tr>`).join('');
+            }catch(e){ alert('Error: '+e.message); }
+        }
+        async function addUser(){
+            try{
+                await apiFetch('/lietotāji', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ vārds:document.getElementById('u_name').value, uzvārds:document.getElementById('u_surname').value, e_pasts:document.getElementById('u_email').value, telefons:document.getElementById('u_phone').value }) });
+                loadUsers();
+            }catch(e){ alert('Error: '+e.message); }
+        }
+        async function delUser(id){ if(!confirm('Delete user?')) return; try{ await apiFetch(`/lietotāji/${id}`, { method:'DELETE' }); loadUsers(); }catch(e){ alert('Error: '+e.message); }}
+
+        // initial load (no token by default)
+        loadBooks(); loadUsers();
+    </script>
+</body>
+</html>

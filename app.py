@@ -19,6 +19,9 @@ from pathlib import Path
 app = Flask(__name__)
 CORS(app)
 
+# Admin token used to protect write endpoints in production (set on Render as an env var)
+ADMIN_TOKEN = os.environ.get('ADMIN_TOKEN')
+
 # Datubāzes konfigurācija
 DATABASE_PATH = str(Path(__file__).parent / 'biblioteka.db')
 
@@ -166,9 +169,20 @@ def meklēt_grāmatu():
     conn.close()
     return jsonify([dict(g) for g in grāmatas])
 
+# --- Config endpoint for frontend to know if admin token is required ---
+@app.route('/api/config', methods=['GET'])
+def get_config():
+    return jsonify({'admin_required': bool(ADMIN_TOKEN)})
+
 @app.route('/api/grāmatas', methods=['POST'])
 def pievienot_grāmatu():
     """Pievieno jaunu grāmatu katalogā"""
+    # Allow writes when ADMIN_TOKEN is not set (dev). When ADMIN_TOKEN is set, require header X-Admin-Token.
+    if ADMIN_TOKEN:
+        token = request.headers.get('X-Admin-Token')
+        if token != ADMIN_TOKEN:
+            return jsonify({'kļūda': 'Unauthorized'}), 401
+
     dati = request.get_json()
     
     # Validācija
@@ -205,6 +219,11 @@ def pievienot_grāmatu():
 @app.route('/api/grāmatas/<isbn>', methods=['PUT'])
 def atjaunināt_grāmatu(isbn):
     """Atjaunina grāmatas informāciju"""
+    if ADMIN_TOKEN:
+        token = request.headers.get('X-Admin-Token')
+        if token != ADMIN_TOKEN:
+            return jsonify({'kļūda': 'Unauthorized'}), 401
+
     dati = request.get_json()
     conn = get_db_connection()
     
@@ -226,6 +245,11 @@ def atjaunināt_grāmatu(isbn):
 @app.route('/api/grāmatas/<isbn>', methods=['DELETE'])
 def dzēst_grāmatu(isbn):
     """Dzēš grāmatu no kataloga"""
+    if ADMIN_TOKEN:
+        token = request.headers.get('X-Admin-Token')
+        if token != ADMIN_TOKEN:
+            return jsonify({'kļūda': 'Unauthorized'}), 401
+
     conn = get_db_connection()
     
     # Pārbauda, vai grāmata nav aizņemta
@@ -265,6 +289,11 @@ def get_lietotāji():
 @app.route('/api/lietotāji', methods=['POST'])
 def pievienot_lietotāju():
     """Reģistrē jaunu lietotāju"""
+    if ADMIN_TOKEN:
+        token = request.headers.get('X-Admin-Token')
+        if token != ADMIN_TOKEN:
+            return jsonify({'kļūda': 'Unauthorized'}), 401
+
     dati = request.get_json()
     
     # Validācija
@@ -297,6 +326,11 @@ def pievienot_lietotāju():
 @app.route('/api/lietotāji/<int:id>', methods=['DELETE'])
 def dzēst_lietotāju(id):
     """Dzēš lietotāju"""
+    if ADMIN_TOKEN:
+        token = request.headers.get('X-Admin-Token')
+        if token != ADMIN_TOKEN:
+            return jsonify({'kļūda': 'Unauthorized'}), 401
+
     conn = get_db_connection()
     
     # Pārbauda, vai lietotājam ir aktīvi aizdevumi
@@ -355,6 +389,11 @@ def get_aizdevumi():
 @app.route('/api/aizdevumi', methods=['POST'])
 def pievienot_aizdevumu():
     """Reģistrē grāmatas aizdevumu"""
+    if ADMIN_TOKEN:
+        token = request.headers.get('X-Admin-Token')
+        if token != ADMIN_TOKEN:
+            return jsonify({'kļūda': 'Unauthorized'}), 401
+
     dati = request.get_json()
     
     if not dati.get('isbn') or not dati.get('lietotāja_id'):
@@ -406,6 +445,11 @@ def pievienot_aizdevumu():
 @app.route('/api/aizdevumi/<int:id>/atgriezt', methods=['POST'])
 def atgriezt_aizdevumu(id):
     """Reģistrē grāmatas atgriešanu"""
+    if ADMIN_TOKEN:
+        token = request.headers.get('X-Admin-Token')
+        if token != ADMIN_TOKEN:
+            return jsonify({'kļūda': 'Unauthorized'}), 401
+
     conn = get_db_connection()
     
     # Atrod aizdevumu
