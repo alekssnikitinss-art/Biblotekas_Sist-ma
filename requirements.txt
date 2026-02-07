@@ -1,5 +1,0 @@
-flask==3.1.2
-flask-cors==6.0.2
-gunicorn==20.1.0
-# Pin setuptools to avoid pkg_resources deprecation warning during startup in some environments
-setuptools<81
