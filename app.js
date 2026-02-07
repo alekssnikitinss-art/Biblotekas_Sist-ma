@@ -77,11 +77,12 @@ function renderBooksUser(q){ const container = document.getElementById('books-us
   const btnReturn = `<button onclick="tryReturn('${b.id}')">Atgriezt</button>`;
   div.innerHTML = `<div>${b.image?'<img src="'+b.image+'">':'<div style="width:80px;height:100px;background:#eee;display:flex;align-items:center;justify-content:center">No image</div>'}</div><div style="flex:1"><strong>${escapeHtml(b.title)}</strong><div>${escapeHtml(b.author)}</div><div>Status: ${escapeHtml(b.status)}</div>${b.status==='available'?btnReserve:''}${(b.status==='borrowed' && user && b.reserved_by===user.username)?btnReturn:''}</div>`; container.appendChild(div); }); }
 
-function renderBooksAdmin(){ const container = document.getElementById('books-admin'); if(!container) return; const items = loadBooks(); container.innerHTML=''; items.forEach(b=>{ const div=document.createElement('div'); div.className='book'; div.innerHTML = `<div>${b.image?'<img src="'+b.image+'">':'<div style="width:80px;height:100px;background:#eee;display:flex;align-items:center;justify-content:center">No image</div>'}</div><div style="flex:1"><strong>${escapeHtml(b.title)}</strong><div>${escapeHtml(b.author)}</div><div>ISBN: ${escapeHtml(b.isbn||'')}</div><div>Status: ${escapeHtml(b.status)}</div><div style="margin-top:6px"><button onclick="adminEdit('${b.id}')">Rediģēt</button> <button onclick="adminDelete('${b.id}')">Dzēst</button> <button onclick="adminMarkFinished('${b.id}')">Atzīmēt kā pabeigtu</button></div></div>`; container.appendChild(div); }); }
+function renderBooksAdmin(){ const container = document.getElementById('books-admin'); if(!container) return; const items = loadBooks(); container.innerHTML=''; items.forEach(b=>{ const div=document.createElement('div'); div.className='book'; const btnReturn = (b.status==='borrowed' || b.status==='reserved') ? `<button onclick="adminReturnBook('${b.id}')" style="background:#f59e0b">Atgriezt</button>` : ''; div.innerHTML = `<div>${b.image?'<img src="'+b.image+'">':'<div style="width:80px;height:100px;background:#eee;display:flex;align-items:center;justify-content:center">No image</div>'}</div><div style="flex:1"><strong>${escapeHtml(b.title)}</strong><div>${escapeHtml(b.author)}</div><div>ISBN: ${escapeHtml(b.isbn||'')}</div><div>Status: <strong>${escapeHtml(b.status)}</strong>${b.reserved_by?' ('+escapeHtml(b.reserved_by)+')':''}</div><div style="margin-top:6px"><button onclick="adminEdit('${b.id}')">Rediģēt</button> <button onclick="adminDelete('${b.id}')">Dzēst</button> ${btnReturn} <button onclick="adminMarkFinished('${b.id}')">Atzīmēt kā pabeigtu</button></div></div>`; container.appendChild(div); }); }
 
 function adminEdit(id){ const books = loadBooks(); const b = books.find(x=>x.id===id); if(!b) return; document.getElementById('book-id').value=b.id; document.getElementById('title').value=b.title; document.getElementById('author').value=b.author; document.getElementById('isbn').value=b.isbn; }
 function adminDelete(id){ if(confirm('Tiešām dzēst?')){ deleteBook(id); renderBooksAdmin(); } }
 function adminMarkFinished(id){ updateBook(id, {status:'finished'}); renderBooksAdmin(); }
+function adminReturnBook(id){ updateBook(id, {status:'available', reserved_by:null}); renderBooksAdmin(); }
 
 // actions called from UI
 function tryReserve(id){ const usr = currentUser(); if(!usr){ if(confirm('Lai rezervētu, nepieciešams pieslēgties. Atvērt User lapu?')) location.href='user.html'; return } try{ reserveBook(id, usr.username); alert('Rezervēta'); renderBooksUser(''); } catch(e){ alert(e.message) } }
@@ -103,3 +104,7 @@ window.registerUser = registerUser;
 window.loginUser = loginUser;
 window.logout = logout;
 window.currentUser = currentUser;
+window.adminEdit = adminEdit;
+window.adminDelete = adminDelete;
+window.adminMarkFinished = adminMarkFinished;
+window.adminReturnBook = adminReturnBook;

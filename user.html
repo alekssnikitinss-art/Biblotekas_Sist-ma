@@ -29,11 +29,33 @@
         <input id="login-password" type="password" placeholder="Parole" />
         <button id="btn-login">Pieslēgties</button>
         <button id="btn-logout" style="display:none">Atslēgties</button>
+        <span id="current-user-display" style="margin-left:16px;color:#666"></span>
       </div>
 
       <h3>Pieejamās grāmatas</h3>
       <input id="search-user" placeholder="Meklēt..." style="width:100%" />
       <div id="books-user"></div>
+    </section>
+
+    <!-- Admin panelis — rādās tikai admins lietotājiem -->
+    <section id="admin-section" style="display:none;margin-top:40px;padding-top:40px;border-top:2px solid #ddd">
+      <h2>🔐 Admin panelis</h2>
+      
+      <h3>Pievienot / Rediģēt grāmatu</h3>
+      <div style="background:#f9f9f9;padding:16px;border-radius:8px">
+        <input id="book-id" type="hidden" />
+        <input id="title" placeholder="Nosaukums" style="width:100%;margin-bottom:8px" />
+        <input id="author" placeholder="Autors" style="width:100%;margin-bottom:8px" />
+        <input id="isbn" placeholder="ISBN" style="width:100%;margin-bottom:8px" />
+        <input id="image-file" type="file" accept="image/png,image/jpeg" style="margin-bottom:8px" />
+        <div style="margin-top:12px">
+          <button id="btn-add" style="background:#16a34a;margin-right:8px">✓ Pievienot/Atjaunināt</button>
+          <button id="btn-clear" style="background:#9ca3af">Notīrīt</button>
+        </div>
+      </div>
+
+      <h3>Visas grāmatas (Admin pārvaldība)</h3>
+      <div id="books-admin"></div>
     </section>
   </div>
 
@@ -42,31 +64,127 @@
     // user page logic (async to allow hashing/init)
     (async function(){
       await initAuth();
+      
+      // Helper function: file to DataURL
+      async function fileToDataURL(file){
+        return new Promise((res,rej)=>{
+          const r = new FileReader();
+          r.onload = e => res(e.target.result);
+          r.onerror = rej;
+          r.readAsDataURL(file);
+        });
+      }
+
+      // Helper function: clear form
+      function clearForm(){
+        document.getElementById('book-id').value = '';
+        document.getElementById('title').value = '';
+        document.getElementById('author').value = '';
+        document.getElementById('isbn').value = '';
+        document.getElementById('image-file').value = null;
+      }
+
+      // Helper: update UI based on login state
+      function updateAuthUI(){
+        const usr = currentUser();
+        const btnLogout = document.getElementById('btn-logout');
+        const userDisplay = document.getElementById('current-user-display');
+        const adminSection = document.getElementById('admin-section');
+
+        if(usr){
+          btnLogout.style.display = 'inline';
+          userDisplay.textContent = `Pieslēgts: ${usr.username} (${usr.role})`;
+          if(usr.role === 'admin'){
+            adminSection.style.display = 'block';
+            renderBooksAdmin();
+          } else {
+            adminSection.style.display = 'none';
+          }
+        } else {
+          btnLogout.style.display = 'none';
+          userDisplay.textContent = '';
+          adminSection.style.display = 'none';
+        }
+      }
+
+      // Registration
       document.getElementById('btn-register').addEventListener('click', async () => {
         const u = document.getElementById('reg-username').value.trim();
         const p = document.getElementById('reg-password').value;
         if(!u || !p){ alert('Ievadi lietotājvārdu un paroli'); return }
-        try{ await registerUser(u,p); alert('Reģistrācija veiksmīga'); } catch(e){ alert(e.message) }
+        try{
+          await registerUser(u,p);
+          alert('Reģistrācija veiksmīga');
+          document.getElementById('reg-username').value = '';
+          document.getElementById('reg-password').value = '';
+        } catch(e){
+          alert(e.message);
+        }
       });
 
+      // Login
       document.getElementById('btn-login').addEventListener('click', async () => {
         const u = document.getElementById('login-username').value.trim();
         const p = document.getElementById('login-password').value;
         const ok = await loginUser(u,p);
         if(ok){
           alert('Pieslēgts');
-          document.getElementById('btn-logout').style.display='inline';
-          const usr = currentUser();
-          if(usr && usr.role==='admin'){
-            // admin page removed; inform admin they are logged in
-            alert('Pieslēdzies kā admin. Admin funkcijas pieejamas šajā lapā, ja tās ir implementētas.');
-          }
-        } else alert('Nepareizi dati');
+          document.getElementById('login-username').value = '';
+          document.getElementById('login-password').value = '';
+          updateAuthUI();
+          renderBooksUser('');
+        } else {
+          alert('Nepareizi dati');
+        }
+      });
+
+      // Logout
+      document.getElementById('btn-logout').addEventListener('click', () => {
+        logout();
+        updateAuthUI();
         renderBooksUser('');
       });
 
-      document.getElementById('btn-logout').addEventListener('click', () => { logout(); document.getElementById('btn-logout').style.display='none'; renderBooksUser('') });
-      const searchUser = document.getElementById('search-user'); searchUser.addEventListener('input', () => renderBooksUser(searchUser.value));
+      // Search
+      const searchUser = document.getElementById('search-user');
+      searchUser.addEventListener('input', () => renderBooksUser(searchUser.value));
+
+      // Admin: Add/Update book
+      document.getElementById('btn-add').addEventListener('click', async () => {
+        const id = document.getElementById('book-id').value;
+        const title = document.getElementById('title').value.trim();
+        const author = document.getElementById('author').value.trim();
+        const isbn = document.getElementById('isbn').value.trim();
+        const file = document.getElementById('image-file').files[0];
+        let img = null;
+
+        if(file){
+          img = await fileToDataURL(file);
+        }
+
+        if(!title || !author){
+          alert('Ievadi nosaukumu un autoru');
+          return;
+        }
+
+        if(id){
+          updateBook(id, {title, author, isbn, image: img});
+        } else {
+          addBook({title, author, isbn, image: img});
+        }
+
+        alert('Grāmata saglabāta');
+        clearForm();
+        renderBooksAdmin();
+      });
+
+      // Admin: Clear form
+      document.getElementById('btn-clear').addEventListener('click', () => {
+        clearForm();
+      });
+
+      // Initial render
+      updateAuthUI();
       renderBooksUser('');
     })();
   </script>
