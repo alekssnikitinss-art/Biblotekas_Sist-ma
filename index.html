@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bibliotēka — Mājas (Guest)</title>
+  <link rel="stylesheet" href="stylessheet/style.css">
+  <style>
+    /* small overrides */
+    .container{max-width:900px;margin:20px auto;padding:10px}
+    nav a{margin-right:12px}
+    .book{border:1px solid #ddd;padding:8px;margin:8px 0;display:flex;gap:12px}
+    .book img{width:80px;height:100px;object-fit:cover}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Bibliotēka</h1>
+      <nav>
+        <a href="index.html">Guest</a>
+        <a href="user.html">User</a>
+      </nav>
+    </header>
+
+    <section>
+      <h2>Grāmatu saraksts (Publiskais skats)</h2>
+      <input id="search" placeholder="Meklēt pēc nosaukuma vai autora" style="width:100%" />
+      <div id="books"></div>
+    </section>
+
+    <footer style="margin-top:20px;font-size:0.9em;color:#666">Šī ir statiska demonstrācijas lapa. Lietotāju un admin funkcionalitāte atrodas atsevišķās lapās.</footer>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // guest view
+    (async function(){
+      await initAuth();
+      const searchEl = document.getElementById('search');
+      searchEl.addEventListener('input', () => renderBooks(searchEl.value));
+      renderBooks('');
+    })();
+  </script>
+</body>
+</html>

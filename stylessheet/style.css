@@ -1,0 +1,72 @@
+/* Smooth, modern stylesheet for the Bibliotēka demo */
+:root{
+  --bg:#f6f8fb;
+  --card:#ffffff;
+  --muted:#6b7280;
+  --accent:#2563eb;
+  --accent-2:#7c3aed;
+  --success:#16a34a;
+  --danger:#dc2626;
+  --glass: rgba(255,255,255,0.6);
+  --radius:12px;
+  --shadow: 0 6px 18px rgba(16,24,40,0.08);
+  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%;background:linear-gradient(180deg,var(--bg),#eef3fb);margin:0;color:#0f172a}
+a{color:var(--accent)}
+
+.container{max-width:960px;margin:28px auto;padding:20px}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+header h1{margin:0;font-size:1.6rem;color:#0b1220}
+nav a{display:inline-block;padding:8px 12px;border-radius:8px;text-decoration:none;color:var(--muted);font-weight:600}
+nav a:hover{background:rgba(37,99,235,0.08);color:var(--accent)}
+
+/* Card / book styles */
+.book{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);display:flex;gap:16px;padding:12px;align-items:center;transition:transform .18s ease,box-shadow .18s ease}
+.book:hover{transform:translateY(-4px);box-shadow:0 10px 30px rgba(16,24,40,0.12)}
+.book img{width:96px;height:122px;border-radius:8px;object-fit:cover;flex-shrink:0;border:1px solid rgba(0,0,0,0.04)}
+.book .meta{flex:1}
+.book .meta strong{display:block;font-size:1.05rem;color:#071029}
+.book .meta div{color:var(--muted);font-size:0.92rem;margin-top:4px}
+.book .actions{display:flex;gap:8px;margin-left:12px}
+
+/* inputs/buttons */
+input[type="text"], input[type="password"], input[type="file"], input{padding:10px 12px;border-radius:10px;border:1px solid rgba(15,23,42,0.06);background:linear-gradient(180deg,#fff,#fbfdff);width:100%;font-size:0.95rem}
+button{background:var(--accent);color:white;border:none;padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:600;transition:transform .12s ease,box-shadow .12s ease}
+button:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(37,99,235,0.12)}
+button.secondary{background:transparent;color:var(--accent);border:1px solid rgba(37,99,235,0.08)}
+
+/* search */
+#search, #search-user{padding-left:14px;height:44px;border-radius:12px;border:1px solid rgba(15,23,42,0.06);box-shadow:inset 0 1px 0 rgba(255,255,255,0.6);margin:8px 0}
+
+/* layout helpers */
+.row{display:flex;gap:12px}
+.col{flex:1}
+
+footer{opacity:0.85}
+
+/* Admin form tighter */
+#admin-area input{margin-top:8px}
+
+/* responsive */
+@media (max-width:720px){
+  header{flex-direction:column;align-items:flex-start;gap:12px}
+  .book{flex-direction:row}
+  .book img{width:76px;height:100px}
+}
+
+/* subtle badges */
+.badge{display:inline-block;padding:6px 10px;border-radius:999px;font-size:0.82rem}
+.badge.available{background:rgba(16,185,129,0.12);color:var(--success)}
+.badge.reserved{background:rgba(245,158,11,0.12);color:#c2410c}
+.badge.borrowed{background:rgba(234,88,12,0.08);color:#b45309}
+.badge.finished{background:rgba(107,114,128,0.08);color:var(--muted)}
+
+/* small helpers for forms */
+.controls{display:flex;gap:8px;flex-wrap:wrap}
+.muted{color:var(--muted);font-size:0.9rem}
+
+/* accessibility focus */
+:focus{outline:2px solid rgba(37,99,235,0.14);outline-offset:2px}

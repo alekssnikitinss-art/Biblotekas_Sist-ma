@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bibliotēka — Admin</title>
+  <link rel="stylesheet" href="stylessheet/style.css">
+  <style>.container{max-width:980px;margin:20px auto;padding:10px} .book{border:1px solid #ddd;padding:8px;margin:8px 0;display:flex;gap:12px} .book img{width:80px;height:100px;object-fit:cover}</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Bibliotēka — Admin panelis</h1>
+      <nav>
+        <a href="index.html">Guest</a>
+        <a href="user.html">User</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+    </header>
+
+    <section>
+      <h2>Admin pieslēgšanās</h2>
+      <div>
+        <input id="admin-user" placeholder="admin" />
+        <input id="admin-pass" type="password" placeholder="parole" />
+        <button id="btn-admin-login">Pieslēgties</button>
+      </div>
+
+      <div id="admin-area" style="display:none;margin-top:12px">
+        <h3>Pievienot / Rediģēt grāmatu</h3>
+        <input id="book-id" type="hidden" />
+        <input id="title" placeholder="Nosaukums" style="width:100%" />
+        <input id="author" placeholder="Autors" style="width:100%" />
+        <input id="isbn" placeholder="ISBN" style="width:100%" />
+        <input id="image-file" type="file" accept="image/png,image/jpeg" />
+        <div style="margin-top:8px">
+          <button id="btn-add">Pievienot/Atjaunināt</button>
+          <button id="btn-clear">Notīrīt</button>
+        </div>
+
+        <h3>Visas grāmatas</h3>
+        <div id="books-admin"></div>
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // admin page now uses the shared auth. Admin can login via user credentials.
+    (async function(){
+      await initAuth();
+      // If already logged in as admin, show admin area
+      const usr = currentUser();
+      if(usr && usr.role==='admin'){
+        document.getElementById('admin-area').style.display='block';
+        renderBooksAdmin();
+      }
+
+      document.getElementById('btn-admin-login').addEventListener('click', async () => {
+        const u = document.getElementById('admin-user').value; const p = document.getElementById('admin-pass').value;
+        const ok = await loginUser(u,p);
+        if(ok){ const cur = currentUser(); if(cur && cur.role==='admin'){ document.getElementById('admin-area').style.display='block'; renderBooksAdmin(); } else alert('Lietotājam nav admin tiesību'); }
+        else alert('Nepareizi akreditācijas dati');
+      });
+
+      document.getElementById('btn-add').addEventListener('click', async () => {
+        const id = document.getElementById('book-id').value;
+        const title = document.getElementById('title').value.trim();
+        const author = document.getElementById('author').value.trim();
+        const isbn = document.getElementById('isbn').value.trim();
+        const file = document.getElementById('image-file').files[0];
+        let img = null;
+        if(file){ img = await fileToDataURL(file); }
+        if(!title || !author){ alert('Ievadi nosaukumu un autoru'); return }
+        if(id) updateBook(id, {title,author,isbn,image:img}); else addBook({title,author,isbn,image:img});
+        clearForm(); renderBooksAdmin();
+      });
+
+      function clearForm(){ document.getElementById('book-id').value=''; document.getElementById('title').value=''; document.getElementById('author').value=''; document.getElementById('isbn').value=''; document.getElementById('image-file').value=null }
+
+      async function fileToDataURL(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=e=>res(e.target.result); r.onerror=rej; r.readAsDataURL(file); }) }
+    })();
+  </script>
+</body>
+</html>

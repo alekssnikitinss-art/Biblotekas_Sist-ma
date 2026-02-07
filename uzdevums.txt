@@ -1,0 +1,185 @@
+Izstrādā datu struktūru un datu glabāšanas sistēmu nelielai bibliotēkai.
+
+1. Prasību analīze un datu modelēšana
+
+Izstrādā prasību dokumentu, kas apraksta nepieciešamās funkcionalitātes (piemēram, grāmatu reģistrācija, lietotāju reģistrācija, grāmatu aizņemšanās).
+
+Izveido konceptuālu datu modeli (piemēram, ER diagrammu), kas attēlo saites starp entītijām (grāmata, lietotājs, aizdevums).
+
+Izstrādā loģisku datu modeli (tabulu shēmas) ar lauku nosaukumiem, datu tipiem un primārajām/ārējām atslēgām.
+
+2. Datu struktūru pārvaldība un ieviešana
+
+Izvēlies piemērotu datu struktūru (piemēram, saistītais saraksts, masīvs, jaucējtabula), lai efektīvi pārvaldītu bibliotēkas grāmatu sarakstu. Paskaidro savu izvēli, pamatojoties uz veiktspējas apsvērumiem (meklēšana, ievietošana, dzēšana).
+
+Izveido klasi vai struktūru, kas attēlo grāmatu un tās atribūtus (nosaukums, autors, ISBN). Paskaidro, kā tā tiks izvietota datora atmiņā.
+
+Ievies datu struktūru izvēlētajā programmēšanas valodā (piemēram, C++, Java, Python) un izveido funkcijas, kas ļauj pievienot jaunu grāmatu, meklēt grāmatu pēc nosaukuma/autora un dzēst grāmatu.
+
+3. Datu glabāšanas sistēmas izvēle un lietošana
+
+Izvēlies datu glabāšanas un pārvaldīšanas sistēmu (piemēram, teksta fails, SQL datubāze, NoSQL datubāze).
+
+Paskaidro, kāpēc izvēlējies tieši šo sistēmu, salīdzinot to ar citām iespējām, ņemot vērā prasības (piemēram, datu konsekvence, mērogojamība).
+
+Ievies kodu, kas saglabā datus izvēlētajā sistēmā un ielādē tos atpakaļ, lai sistēma varētu saglabāt stāvokli starp sesijām.
+
+Izveidoto dokumentu augšupielādē zemāk.
+
+Vērtēšanas skala:
+Iegūto punktu skaits	
+1-7
+
+8-15
+
+16-22
+
+23-30
+
+31-34
+
+35-39
+
+40-43
+
+44-47
+
+48-49
+
+50-52
+
+Uzdevumu izpildes apjoms (%)	
+1-14
+
+15-29
+
+30-44
+
+45-59
+
+60-67
+
+68-75
+
+76-83
+
+84-91
+
+92-96
+
+97-100
+
+Vērtējums ballēs	
+1
+
+2
+
+3
+
+4
+
+5
+
+6
+
+7
+
+8
+
+9
+
+10
+
+Iesnieguma statuss
+Iesnieguma statuss	Iesniegts vērtēšanai
+Vērtēšanas statuss	Nav novērtēts
+Pēdējās izmaiņas	piektdiena, 2026. gada 30. janvāris, 08:22
+Failu iesniegšana	
+Datu struktūras un datu glabāšanas sistēmas izstrāde.pdf Datu struktūras un datu glabāšanas sistēmas izstrāde.pdf2026. gada 30. janvāris, 08:21
+Iesnieguma komentāri	
+Komentāri (1)
+Vērtēšanas kritēriji
+Rubrika
+Prasību dokumenta kvalitātes nodrošināšana	
+Nepilnīgs vai neskaidrs prasību saraksts. Nav strukturēts. Trūkst būtiskās informācijas
+0punkti
+Trūkst nefunkcionālo prasību. Nav skaidras prioritātes
+1punkti
+Pamatfunkcionālās prasības minētas. Vienkārša struktūra
+2punkti
+Lietotāju lomas daļēji definētas. Laba struktūra, bet trūkst dažu detaļu
+3punkti
+Galvenās funkcionālās prasības identificētas. Daļēji aprakstītas nefunkcionālās prasības
+4punkti
+Prasības numurētas un strukturētas. Iekļautas prioritātes un pieņēmumi
+5punkti
+Pilnīgs funkcionālo prasību saraksts ar detalizētiem aprakstiem. Nefunkcionālās prasības (veiktspēja, drošība, lietojamība). Lietotāju lomas un to tiesības skaidri definētas
+6punkti
+Konceptuālā datu modeļa veidošana	
+Modelis nav izveidots
+0punkti
+Nepilnīga vai nepareiza ER diagramma. Nav skaidru saišu vai entītātes nav definētas
+2punkti
+Vienkārša ER diagramma. Pamata entītijas un saites. Trūkst daži atribūti vai precizitātes
+4punkti
+ER diagramma ar galvenajām entītijām. Lielākā daļa saišu pareizi definētas. Galvenie atribūti iekļauti. Dažas neprecizitātes vai trūkstošās detaļas
+6punkti
+Pilnīga ER diagramma ar visām entītijām. Pareizi definētas saites (1:1, 1:N, M:N). Iekļauti atribūti un to tipi. Primārās atslēgas identificētas. Diagramma skaidra un profesionāli izstrādāta
+8punkti
+Loģiskā datu modeļa veidošana	
+Modelis nav izveidots
+0punkti
+Nepilnīgas vai nepareizas tabulu shēmas. Nav skaidru atslēgu vai datu tipu
+2punkti
+Pamata tabulu struktūra. Galvenie lauki identificēti. Trūkst daži datu tipi vai atslēgas
+4punkti
+Galvenās tabulas ar atbilstošiem laukiem. Lielākā daļa datu tipu pareizi. Atslēgas lielākoties identificētas. Dažas nepilnības ierobežojumos
+6punkti
+Pilnīgas tabulu shēmas ar visiem laukiem. Pareizi definēti datu tipi katram laukam. Primārās un ārējās atslēgas skaidri norādītas. Ierobežojumi (constraints) definēti. Indeksi plānoti meklēšanas optimizācijai
+8punkti
+Datu struktūras izvēle un pamatojuma definēšana	
+Nepiemērota datu struktūra, nav pamatojuma vai tas ir nepareizs
+0punkti
+Pieņemama datu struktūras izvēle. Vienkāršs pamatojums. Pamata izpratne par veiktspēju
+2punkti
+Piemērota datu struktūras izvēle. Labs pamatojums ar salīdzinājumu. Izprot veiktspējas aspektus. Dažas neprecizitātes kompleksitātes analīzē
+4punkti
+Izvēlētā datu struktūra pilnībā atbilst uzdevuma prasībām. Detalizēts salīdzinājums ar citām datu struktūrām. Pareizs Big O kompleksitātes analīze operācijām. Pamatojums balstīts uz konkrētiem izmantošanas scenārijiem. Ņemti vērā atmiņas izmantošanas aspekti
+6punkti
+Klašu/struktūru dizaina definēšana	
+Slikta klašu struktūra. Nav skaidru atribūtu vai metožu
+0punkti
+Pamata klašu struktūra. Galvenie atribūti un metodes. Trūkst OOP principu ievērošanas
+2punkti
+Labi definētas klases ar galvenajiem atribūtiem. Lielākā daļa metožu implementētas. Dažas enkapsulācijas problēmas
+4punkti
+Objektu orientēta pieeja ar skaidriem klasēm. Enkapsulācija un datu paslēpšana. Konstruktori un destruktori (ja nepieciešami). Atbilstošas piekļuves metodes (getters/setters). Komentēta koda struktūra
+6punkti
+Funkcionalitātes implementācijas ieviešana	
+Nepilnīga vai nedarbojoša implementācija. Kļūdas kodā vai loģikā
+0punkti
+Pamata operācijas implementētas. Vienkārša meklēšana. Minimāla kļūdu apstrāde
+2punkti
+Galvenās CRUD operācijas darbojas. Pamata meklēšana implementēta. Daļēja kļūdu apstrāde. Kods lielākoties darbojas pareizi
+4punkti
+Visas CRUD operācijas pilnībā implementētas. Meklēšana pēc vairākiem kritērijiem. Kļūdu apstrāde un validācija. Optimizētas meklēšanas algoritmi. Kods testēts ar dažādiem scenārijiem
+6punkti
+Glabāšanas sistēmas izvēle un pamatošana	
+Nepiemērota sistēmas izvēle. Nav pamatojuma vai tas ir nepareizs
+0punkti
+Pieņemama sistēmas izvēle. Vienkāršs pamatojums. Pamata izpratne par opcijām
+2punkti
+Piemērota sistēmas izvēle. Labs pamatojums ar salīdzinājumu. Izprot galvenās atšķirības starp opcijām. Dažas nepilnības analīzē
+4punkti
+Izvēlētā sistēma pilnībā atbilst prasībām. Detalizēts salīdzinājums starp dažādām opcijām. ACID īpašību analīze (ja piemērojams). Mērogojamības un veiktspējas apsvērumi. Drošības aspektu ņemšana vērā
+6punkti
+Datu persistences (pastāvības) implementācijas nodrošināšana	
+Nefunkcionējoša vai nepilnīga implementācija. Nav datu persistences vai tā nedarbojas
+0punkti
+Vienkārša saglabāšana/ielāde. Minimāla kļūdu apstrāde. Pamata funkcionalitāte darbojas
+2punkti
+Pamata saglabāšana un ielāde darbojas. Daļēja kļūdu apstrāde. Datu integritāte lielākoties saglabāta. Dažas nepilnības drošībā vai efektivitātē
+4punkti
+Pilnīga datu saglabāšanas funkcionalitāte. Efektīva datu ielāde no glabātuves. Transakciju atbalsts (ja piemērojams). Datu integritātes pārbaudes. Backup un recovery mehānismi. Kļūdu apstrāde datu operācijām
+6punkti
+﻿

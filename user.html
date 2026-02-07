@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="lv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bibliotēka — User</title>
+  <link rel="stylesheet" href="stylessheet/style.css">
+  <style>.container{max-width:900px;margin:20px auto;padding:10px} .book{border:1px solid #ddd;padding:8px;margin:8px 0;display:flex;gap:12px} .book img{width:80px;height:100px;object-fit:cover}</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Bibliotēka — Lietotāja skats</h1>
+      <nav>
+        <a href="index.html">Guest</a>
+        <a href="user.html">User</a>
+      </nav>
+    </header>
+
+    <section>
+      <h2>Autorizācija / Reģistrācija</h2>
+      <div>
+        <input id="reg-username" placeholder="Lietotājvārds" />
+        <input id="reg-password" type="password" placeholder="Parole" />
+        <button id="btn-register">Reģistrēt</button>
+      </div>
+      <div style="margin-top:8px">
+        <input id="login-username" placeholder="Lietotājvārds" />
+        <input id="login-password" type="password" placeholder="Parole" />
+        <button id="btn-login">Pieslēgties</button>
+        <button id="btn-logout" style="display:none">Atslēgties</button>
+      </div>
+
+      <h3>Pieejamās grāmatas</h3>
+      <input id="search-user" placeholder="Meklēt..." style="width:100%" />
+      <div id="books-user"></div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // user page logic (async to allow hashing/init)
+    (async function(){
+      await initAuth();
+      document.getElementById('btn-register').addEventListener('click', async () => {
+        const u = document.getElementById('reg-username').value.trim();
+        const p = document.getElementById('reg-password').value;
+        if(!u || !p){ alert('Ievadi lietotājvārdu un paroli'); return }
+        try{ await registerUser(u,p); alert('Reģistrācija veiksmīga'); } catch(e){ alert(e.message) }
+      });
+
+      document.getElementById('btn-login').addEventListener('click', async () => {
+        const u = document.getElementById('login-username').value.trim();
+        const p = document.getElementById('login-password').value;
+        const ok = await loginUser(u,p);
+        if(ok){
+          alert('Pieslēgts');
+          document.getElementById('btn-logout').style.display='inline';
+          const usr = currentUser();
+          if(usr && usr.role==='admin'){
+            // admin page removed; inform admin they are logged in
+            alert('Pieslēdzies kā admin. Admin funkcijas pieejamas šajā lapā, ja tās ir implementētas.');
+          }
+        } else alert('Nepareizi dati');
+        renderBooksUser('');
+      });
+
+      document.getElementById('btn-logout').addEventListener('click', () => { logout(); document.getElementById('btn-logout').style.display='none'; renderBooksUser('') });
+      const searchUser = document.getElementById('search-user'); searchUser.addEventListener('input', () => renderBooksUser(searchUser.value));
+      renderBooksUser('');
+    })();
+  </script>
+</body>
+</html>
