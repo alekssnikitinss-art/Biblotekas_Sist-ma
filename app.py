@@ -517,6 +517,18 @@ def get_statistika():
     conn.close()
     return jsonify(stats)
 
+
+@app.route('/api/health', methods=['GET'])
+def health():
+    """Simple health check for readiness and monitoring."""
+    try:
+        conn = get_db_connection()
+        conn.execute('SELECT 1').fetchone()
+        conn.close()
+        return jsonify({'status': 'ok'}), 200
+    except Exception:
+        return jsonify({'status': 'error'}), 500
+
 # ============= STATISKĀ SATURA SERVĒŠANA =============
 
 @app.route('/')

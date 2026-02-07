@@ -72,6 +72,7 @@ Notes about identifiers and encoding
 
 Troubleshooting
 - If gunicorn fails with "ModuleNotFoundError: No module named 'your_application'": ensure `Procfile` is present and that the Start Command refers to `app:app` (module:variable).
+    - Note: Some tutorial templates or Render start commands use `your_application:app` as an example. To be resilient to that, this repo includes a compatibility shim `your_application.py` that simply re-exports the real `app` (so `your_application:app` will work). Prefer setting Start Command to `app:app` though.
 - If you see pkg_resources warnings: we pinned `setuptools<81` in `requirements.txt` to reduce that message.
 - If the app logs show SQLite locking errors under concurrency, reduce gunicorn workers to 1 (we set that in `Procfile`) or migrate to Postgres.
 

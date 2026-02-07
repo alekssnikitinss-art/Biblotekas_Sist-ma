@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: biblioteka-web
+    env: python
+    plan: free
+    repo: <CHANGE_ME_TO_YOUR_REPO_URL>
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4
+    envVars:
+      - key: ADMIN_TOKEN
+        scope: RUN_TIME
