@@ -304,24 +304,57 @@
         const file = document.getElementById('image-file').files[0];
         let img = null;
 
-        if(file){
-          img = await fileToDataURL(file);
-        }
-
         if(!title || !author){
           alert('Ievadi nosaukumu un autoru');
           return;
         }
 
-        if(id){
-          updateBook(id, {title, author, isbn, image: img});
-        } else {
-          addBook({title, author, isbn, image: img});
-        }
+        // Show loading
+        const btnAdd = document.getElementById('btn-add');
+        const originalText = btnAdd.textContent;
+        btnAdd.textContent = '⏳ Saglabā...';
+        btnAdd.disabled = true;
 
-        alert('Grāmata saglabāta');
-        clearForm();
-        renderBooksAdmin();
+        try {
+          if(file){
+            // Check file size - max 2MB
+            if(file.size > 2000000){
+              alert('Attēls ir pārāk liels! Maksimums: 2 MB\nJūsu attēla lielums: ' + Math.round(file.size / 1024 / 1024 * 10) / 10 + ' MB');
+              btnAdd.textContent = originalText;
+              btnAdd.disabled = false;
+              return;
+            }
+
+            // Read file as DataURL
+            img = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                resolve(e.target.result);
+              };
+              reader.onerror = () => {
+                reject(new Error('Failed to read file'));
+              };
+              reader.readAsDataURL(file);
+            });
+          }
+
+          // Save book
+          if(id){
+            updateBook(id, {title, author, isbn, image: img});
+          } else {
+            addBook({title, author, isbn, image: img});
+          }
+
+          alert('Grāmata saglabāta ✅');
+          clearForm();
+          renderBooksAdmin();
+        } catch(e){
+          console.error('Error:', e);
+          alert('Kļūda: ' + (e.message || 'Neizdevās saglabāt grāmatu'));
+        } finally {
+          btnAdd.textContent = originalText;
+          btnAdd.disabled = false;
+        }
       });
 
       // Admin: Clear form
