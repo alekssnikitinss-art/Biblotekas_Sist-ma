@@ -5,7 +5,146 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Bibliotēka — User</title>
   <link rel="stylesheet" href="stylessheet/style.css">
-  <style>.container{max-width:900px;margin:20px auto;padding:10px} .book{border:1px solid #ddd;padding:8px;margin:8px 0;display:flex;gap:12px} .book img{width:80px;height:100px;object-fit:cover}</style>
+  <style>
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 10px;
+    }
+    
+    .book {
+      border: 1px solid #ddd;
+      padding: 8px;
+      margin: 8px 0;
+      display: flex;
+      gap: 12px;
+    }
+    
+    .book img {
+      width: 80px;
+      height: 100px;
+      object-fit: cover;
+    }
+
+    /* Auth section styling */
+    .auth-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+      background: linear-gradient(135deg, #f0f4f8 0%, #e8f1f8 100%);
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #d0e0f0;
+    }
+
+    .auth-box {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .auth-box h4 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      color: #0b1220;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 700;
+    }
+
+    .auth-box input {
+      padding: 10px 12px !important;
+      font-size: 13px !important;
+      border: 1px solid #cad5e0 !important;
+      border-radius: 8px !important;
+      background: white !important;
+      height: auto !important;
+      margin: 0 !important;
+    }
+
+    .auth-box input:focus {
+      border-color: #2563eb !important;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .auth-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .auth-buttons button {
+      flex: 1;
+      padding: 9px 12px !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      border-radius: 8px !important;
+      border: none !important;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .auth-buttons button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+
+    #btn-login {
+      background: #2563eb !important;
+      color: white !important;
+    }
+
+    #btn-register {
+      background: #2563eb !important;
+      color: white !important;
+    }
+
+    #btn-logout {
+      background: #ef4444 !important;
+      color: white !important;
+    }
+
+    #current-user-display {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: rgba(37, 99, 235, 0.1);
+      color: #0b1220;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* Books section */
+    .books-section {
+      margin-top: 20px;
+    }
+
+    .books-section h3 {
+      margin: 16px 0 12px 0;
+      font-size: 16px;
+      color: #0b1220;
+    }
+
+    /* Responsive */
+    @media (max-width: 700px) {
+      .auth-container {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 16px;
+      }
+
+      .auth-buttons {
+        flex-direction: column;
+      }
+
+      .auth-buttons button {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -17,22 +156,29 @@
       </nav>
     </header>
 
-    <section>
-      <h2>Autorizācija / Reģistrācija</h2>
-      <div>
+    <!-- Auth Section - Compact and in corner -->
+    <div class="auth-container">
+      <div class="auth-box">
+        <h4>📝 Reģistrācija</h4>
         <input id="reg-username" placeholder="Lietotājvārds" />
         <input id="reg-password" type="password" placeholder="Parole" />
         <button id="btn-register">Reģistrēt</button>
       </div>
-      <div style="margin-top:8px">
+
+      <div class="auth-box">
+        <h4>🔐 Pieslēgšanās</h4>
         <input id="login-username" placeholder="Lietotājvārds" />
         <input id="login-password" type="password" placeholder="Parole" />
-        <button id="btn-login">Pieslēgties</button>
-        <button id="btn-logout" style="display:none">Atslēgties</button>
-        <span id="current-user-display" style="margin-left:16px;color:#666"></span>
+        <div class="auth-buttons">
+          <button id="btn-login">Pieslēgties</button>
+          <button id="btn-logout" style="display:none">Atslēgties</button>
+        </div>
+        <span id="current-user-display"></span>
       </div>
+    </div>
 
-      <h3>Pieejamās grāmatas</h3>
+    <section class="books-section">
+      <h3>📚 Pieejamās grāmatas</h3>
       <input id="search-user" placeholder="Meklēt..." style="width:100%" />
       <div id="books-user"></div>
     </section>
@@ -92,8 +238,8 @@
         const adminSection = document.getElementById('admin-section');
 
         if(usr){
-          btnLogout.style.display = 'inline';
-          userDisplay.textContent = `Pieslēgts: ${usr.username} (${usr.role})`;
+          btnLogout.style.display = 'inline-block';
+          userDisplay.textContent = `✅ Pieslēgts: ${usr.username} (${usr.role})`;
           if(usr.role === 'admin'){
             adminSection.style.display = 'block';
             renderBooksAdmin();
