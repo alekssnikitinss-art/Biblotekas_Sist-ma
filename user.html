@@ -317,9 +317,9 @@
 
         try {
           if(file){
-            // Check file size - max 2MB
-            if(file.size > 2000000){
-              alert('Attēls ir pārāk liels! Maksimums: 2 MB\nJūsu attēla lielums: ' + Math.round(file.size / 1024 / 1024 * 10) / 10 + ' MB');
+            // Check file size - max 20MB
+            if(file.size > 20000000000){
+              alert('Attēls ir pārāk liels! Maksimums: 20 MB\nJūsu attēla lielums: ' + Math.round(file.size / 1024 / 1024 * 10) / 10 + ' MB');
               btnAdd.textContent = originalText;
               btnAdd.disabled = false;
               return;
