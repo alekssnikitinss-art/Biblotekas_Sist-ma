@@ -18,7 +18,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Database configuration from environment variables
-DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/biblioteka')
+DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://aleks:zoyDivWHXQkdiuWiMOAuxlPlja5Xx0b1@dpg-d64fu2fgi27c73b11to0-a.frankfurt-postgres.render.com/biblotekas_sistemas_db')
 
 def get_db_connection():
     """Get a database connection"""
