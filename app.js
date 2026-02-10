@@ -2,7 +2,7 @@
 // API Base URL (change based on environment)
 const API_BASE = window.location.hostname === 'localhost' 
   ? 'http://localhost:5000/api'
-  : 'https://biblioteka-backend.onrender.com/api';
+  : 'https://biblioteka-backend-4i2b.onrender.com/api';
 
 // ============================================================================
 // SESSION MANAGEMENT
