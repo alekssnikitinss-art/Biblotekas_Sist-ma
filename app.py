@@ -5,8 +5,8 @@ Uses PostgreSQL for data storage
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import psycopg
+from psycopg.extras import RealDictCursor
 import os
 from datetime import datetime
 import bcrypt
@@ -23,7 +23,7 @@ DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://aleks:zoyDivWHXQkdiuWiMOA
 def get_db_connection():
     """Get a database connection"""
     try:
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = psycopg.connect(DATABASE_URL)
         return conn
     except Exception as e:
         print(f"Database connection error: {e}")
@@ -137,7 +137,7 @@ def register():
                     'role': user[2]
                 }
             }), 201
-        except psycopg2.IntegrityError:
+        except psycopg.IntegrityError:
             conn.rollback()
             return jsonify({'error': 'Username already exists'}), 400
         finally:
