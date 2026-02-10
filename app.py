@@ -6,7 +6,7 @@ Uses PostgreSQL for data storage
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import psycopg
-from psycopg.extras import RealDictCursor
+from psycopg import extras
 import os
 from datetime import datetime
 import bcrypt
@@ -158,7 +158,7 @@ def login():
             return jsonify({'error': 'Username and password required'}), 400
         
         conn = get_db_connection()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur = conn.cursor(row_factory=extras.DictRow)
         
         cur.execute('SELECT id, username, password, role FROM users WHERE username = %s', (username,))
         user = cur.fetchone()
@@ -193,7 +193,7 @@ def get_books():
         search = request.args.get('search', '').strip().lower()
         
         conn = get_db_connection()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur = conn.cursor(row_factory=extras.DictRow)
         
         if search:
             cur.execute('''
