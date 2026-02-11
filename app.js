@@ -1,538 +1,437 @@
-"""
-Bibliotēka Library Management System - Flask Backend
-Uses PostgreSQL with psycopg 3.x (Python 3.13 compatible)
-"""
+// app.js — Uses Flask API backend with PostgreSQL database
+// API Base URL (change based on environment)
+const API_BASE = window.location.hostname === 'localhost' 
+  ? 'http://localhost:5000/api'
+  : 'https://biblioteka-backend-4i2b.onrender.com/api';
 
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import psycopg
-import os
-from datetime import datetime
-import bcrypt
+// ============================================================================
+// SESSION MANAGEMENT
+// ============================================================================
 
-app = Flask(__name__)
-CORS(app)
+function currentUser() {
+  const session = sessionStorage.getItem('user_session');
+  return session ? JSON.parse(session) : null;
+}
 
-# Database configuration from environment variables
-DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/biblioteka')
+function logout() {
+  sessionStorage.removeItem('user_session');
+  window.location.href = 'user.html';
+}
 
-def get_db_connection():
-    """Get a database connection"""
-    try:
-        conn = psycopg.connect(DATABASE_URL)
-        return conn
-    except Exception as e:
-        print(f"Database connection error: {e}")
-        return None
+// ============================================================================
+// AUTHENTICATION
+// ============================================================================
 
-def init_db():
-    """Initialize database schema"""
-    conn = get_db_connection()
-    if not conn:
-        print("Could not connect to database")
-        return False
+async function registerUser(username, password) {
+  try {
+    const response = await fetch(`${API_BASE}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
     
-    try:
-        # Create users table
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                role TEXT NOT NULL DEFAULT 'user',
-                created_at TIMESTAMP DEFAULT NOW()
-            )
-        ''')
-        
-        # Create books table
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS books (
-                id SERIAL PRIMARY KEY,
-                title TEXT NOT NULL,
-                author TEXT NOT NULL,
-                isbn TEXT,
-                status TEXT NOT NULL DEFAULT 'available',
-                image BYTEA,
-                reserved_by INTEGER REFERENCES users(id),
-                created_at TIMESTAMP DEFAULT NOW()
-            )
-        ''')
-        
-        # Create loans table
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS loans (
-                id SERIAL PRIMARY KEY,
-                book_id INTEGER REFERENCES books(id) ON DELETE CASCADE,
-                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-                borrowed_at TIMESTAMP DEFAULT NOW(),
-                returned_at TIMESTAMP,
-                created_at TIMESTAMP DEFAULT NOW()
-            )
-        ''')
-        
-        # Create admin user if not exists
-        hashed_admin = bcrypt.hashpw(b'admin', bcrypt.gensalt()).decode('utf-8')
-        
-        # Check if admin exists
-        cursor = conn.execute('SELECT id FROM users WHERE username = %s', ('admin',))
-        admin_exists = cursor.fetchone()
-        
-        if not admin_exists:
-            conn.execute('''
-                INSERT INTO users (username, password, role)
-                VALUES (%s, %s, %s)
-            ''', ('admin', hashed_admin, 'admin'))
-        
-        conn.commit()
-        print("✅ Database schema initialized successfully")
-        return True
-    except Exception as e:
-        print(f"Error initializing database: {e}")
-        conn.rollback()
-        return False
-    finally:
-        conn.close()
-
-# ============================================================================
-# AUTHENTICATION ENDPOINTS
-# ============================================================================
-
-@app.route('/api/auth/register', methods=['POST'])
-def register():
-    """Register a new user"""
-    try:
-        data = request.json
-        username = data.get('username', '').strip()
-        password = data.get('password', '').strip()
-        
-        if not username or not password:
-            return jsonify({'error': 'Username and password required'}), 400
-        
-        if len(password) < 3:
-            return jsonify({'error': 'Password must be at least 3 characters'}), 400
-        
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        
-        conn = get_db_connection()
-        
-        try:
-            cursor = conn.execute('''
-                INSERT INTO users (username, password, role)
-                VALUES (%s, %s, %s)
-                RETURNING id, username, role
-            ''', (username, hashed_password, 'user'))
-            
-            user = cursor.fetchone()
-            conn.commit()
-            
-            return jsonify({
-                'success': True,
-                'message': 'User registered successfully',
-                'user': {
-                    'id': user[0],
-                    'username': user[1],
-                    'role': user[2]
-                }
-            }), 201
-        except psycopg.IntegrityError:
-            conn.rollback()
-            return jsonify({'error': 'Username already exists'}), 400
-        finally:
-            conn.close()
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/auth/login', methods=['POST'])
-def login():
-    """Login user"""
-    try:
-        data = request.json
-        username = data.get('username', '').strip()
-        password = data.get('password', '').strip()
-        
-        if not username or not password:
-            return jsonify({'error': 'Username and password required'}), 400
-        
-        conn = get_db_connection()
-        cursor = conn.execute('SELECT id, username, password, role FROM users WHERE username = %s', (username,))
-        user = cursor.fetchone()
-        conn.close()
-        
-        if not user:
-            return jsonify({'error': 'Invalid credentials'}), 401
-        
-        user_id, user_name, stored_pass, user_role = user
-        
-        if not bcrypt.checkpw(password.encode('utf-8'), stored_pass.encode('utf-8')):
-            return jsonify({'error': 'Invalid credentials'}), 401
-        
-        return jsonify({
-            'success': True,
-            'user': {
-                'id': user_id,
-                'username': user_name,
-                'role': user_role
-            }
-        }), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# ============================================================================
-# BOOK ENDPOINTS
-# ============================================================================
-
-@app.route('/api/books', methods=['GET'])
-def get_books():
-    """Get all books with optional search"""
-    try:
-        search = request.args.get('search', '').strip().lower()
-        
-        conn = get_db_connection()
-        
-        if search:
-            cursor = conn.execute('''
-                SELECT id, title, author, isbn, status, image, reserved_by
-                FROM books
-                WHERE LOWER(title) LIKE %s OR LOWER(author) LIKE %s
-                ORDER BY created_at DESC
-            ''', (f'%{search}%', f'%{search}%'))
-        else:
-            cursor = conn.execute('''
-                SELECT id, title, author, isbn, status, image, reserved_by
-                FROM books
-                ORDER BY created_at DESC
-            ''')
-        
-        books = cursor.fetchall()
-        conn.close()
-        
-        # Convert to list of dicts and handle images
-        import base64
-        books_list = []
-        for book in books:
-            book_data = {
-                'id': book[0],
-                'title': book[1],
-                'author': book[2],
-                'isbn': book[3],
-                'status': book[4],
-                'image': None,
-                'reserved_by': book[6]
-            }
-            if book[5]:  # image bytes
-                book_data['image'] = 'data:image/jpeg;base64,' + base64.b64encode(book[5]).decode('utf-8')
-            books_list.append(book_data)
-        
-        return jsonify(books_list), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/books', methods=['POST'])
-def create_book():
-    """Create a new book"""
-    try:
-        data = request.json
-        title = data.get('title', '').strip()
-        author = data.get('author', '').strip()
-        isbn = data.get('isbn', '').strip()
-        image = data.get('image')  # Base64 string
-        
-        if not title or not author:
-            return jsonify({'error': 'Title and author are required'}), 400
-        
-        # Convert base64 image to bytes
-        image_bytes = None
-        if image:
-            import base64
-            try:
-                if image.startswith('data:image'):
-                    image_bytes = base64.b64decode(image.split(',')[1])
-                else:
-                    image_bytes = base64.b64decode(image)
-            except Exception as e:
-                print(f"Image decode error: {e}")
-                image_bytes = None
-        
-        conn = get_db_connection()
-        cursor = conn.execute('''
-            INSERT INTO books (title, author, isbn, status, image)
-            VALUES (%s, %s, %s, %s, %s)
-            RETURNING id, title, author, isbn, status
-        ''', (title, author, isbn or None, 'available', image_bytes))
-        
-        book = cursor.fetchone()
-        conn.commit()
-        conn.close()
-        
-        return jsonify({
-            'success': True,
-            'book': {
-                'id': book[0],
-                'title': book[1],
-                'author': book[2],
-                'isbn': book[3],
-                'status': book[4],
-                'image': None,
-                'reserved_by': None
-            }
-        }), 201
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/books/<int:book_id>', methods=['PUT'])
-def update_book(book_id):
-    """Update a book"""
-    try:
-        data = request.json
-        title = data.get('title', '').strip()
-        author = data.get('author', '').strip()
-        isbn = data.get('isbn', '').strip()
-        image = data.get('image')
-        
-        conn = get_db_connection()
-        
-        # Check if book exists
-        cursor = conn.execute('SELECT id FROM books WHERE id = %s', (book_id,))
-        if not cursor.fetchone():
-            conn.close()
-            return jsonify({'error': 'Book not found'}), 404
-        
-        # Handle image update
-        image_bytes = None
-        if image:
-            import base64
-            try:
-                if image.startswith('data:image'):
-                    image_bytes = base64.b64decode(image.split(',')[1])
-                else:
-                    image_bytes = base64.b64decode(image)
-            except:
-                image_bytes = None
-        
-        # Update book
-        if image_bytes is not None:
-            cursor = conn.execute('''
-                UPDATE books
-                SET title = %s, author = %s, isbn = %s, image = %s
-                WHERE id = %s
-                RETURNING id, title, author, isbn, status
-            ''', (title, author, isbn or None, image_bytes, book_id))
-        else:
-            cursor = conn.execute('''
-                UPDATE books
-                SET title = %s, author = %s, isbn = %s
-                WHERE id = %s
-                RETURNING id, title, author, isbn, status
-            ''', (title, author, isbn or None, book_id))
-        
-        book = cursor.fetchone()
-        conn.commit()
-        conn.close()
-        
-        return jsonify({
-            'success': True,
-            'book': {
-                'id': book[0],
-                'title': book[1],
-                'author': book[2],
-                'isbn': book[3],
-                'status': book[4]
-            }
-        }), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/books/<int:book_id>', methods=['DELETE'])
-def delete_book(book_id):
-    """Delete a book"""
-    try:
-        conn = get_db_connection()
-        
-        cursor = conn.execute('SELECT id FROM books WHERE id = %s', (book_id,))
-        if not cursor.fetchone():
-            conn.close()
-            return jsonify({'error': 'Book not found'}), 404
-        
-        conn.execute('DELETE FROM books WHERE id = %s', (book_id,))
-        conn.commit()
-        conn.close()
-        
-        return jsonify({'success': True, 'message': 'Book deleted'}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# ============================================================================
-# BOOK ACTIONS (Reserve, Borrow, Return)
-# ============================================================================
-
-@app.route('/api/books/<int:book_id>/reserve', methods=['POST'])
-def reserve_book(book_id):
-    """Reserve a book"""
-    try:
-        data = request.json
-        username = data.get('username')
-        
-        if not username:
-            return jsonify({'error': 'Username required'}), 400
-        
-        conn = get_db_connection()
-        
-        # Get user ID
-        cursor = conn.execute('SELECT id FROM users WHERE username = %s', (username,))
-        user = cursor.fetchone()
-        if not user:
-            conn.close()
-            return jsonify({'error': 'User not found'}), 404
-        user_id = user[0]
-        
-        # Check book status
-        cursor = conn.execute('SELECT status FROM books WHERE id = %s', (book_id,))
-        book = cursor.fetchone()
-        if not book:
-            conn.close()
-            return jsonify({'error': 'Book not found'}), 404
-        
-        if book[0] != 'available':
-            conn.close()
-            return jsonify({'error': 'Book is not available'}), 400
-        
-        # Reserve book
-        conn.execute('''
-            UPDATE books
-            SET status = %s, reserved_by = %s
-            WHERE id = %s
-        ''', ('reserved', user_id, book_id))
-        
-        conn.commit()
-        conn.close()
-        
-        return jsonify({'success': True, 'message': 'Book reserved'}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/books/<int:book_id>/borrow', methods=['POST'])
-def borrow_book(book_id):
-    """Borrow a book"""
-    try:
-        data = request.json
-        username = data.get('username')
-        
-        if not username:
-            return jsonify({'error': 'Username required'}), 400
-        
-        conn = get_db_connection()
-        
-        # Get user ID
-        cursor = conn.execute('SELECT id FROM users WHERE username = %s', (username,))
-        user = cursor.fetchone()
-        if not user:
-            conn.close()
-            return jsonify({'error': 'User not found'}), 404
-        user_id = user[0]
-        
-        # Check book status
-        cursor = conn.execute('SELECT status, reserved_by FROM books WHERE id = %s', (book_id,))
-        book = cursor.fetchone()
-        if not book:
-            conn.close()
-            return jsonify({'error': 'Book not found'}), 404
-        
-        status, reserved_by = book
-        if status == 'available' or (status == 'reserved' and reserved_by == user_id):
-            conn.execute('''
-                UPDATE books
-                SET status = %s, reserved_by = %s
-                WHERE id = %s
-            ''', ('borrowed', user_id, book_id))
-            
-            # Create loan record
-            conn.execute('''
-                INSERT INTO loans (book_id, user_id)
-                VALUES (%s, %s)
-            ''', (book_id, user_id))
-            
-            conn.commit()
-            conn.close()
-            return jsonify({'success': True, 'message': 'Book borrowed'}), 200
-        else:
-            conn.close()
-            return jsonify({'error': 'Cannot borrow this book'}), 400
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/books/<int:book_id>/return', methods=['POST'])
-def return_book(book_id):
-    """Return a book"""
-    try:
-        data = request.json
-        username = data.get('username')
-        
-        if not username:
-            return jsonify({'error': 'Username required'}), 400
-        
-        conn = get_db_connection()
-        
-        # Get user ID
-        cursor = conn.execute('SELECT id FROM users WHERE username = %s', (username,))
-        user = cursor.fetchone()
-        if not user:
-            conn.close()
-            return jsonify({'error': 'User not found'}), 404
-        user_id = user[0]
-        
-        # Check book
-        cursor = conn.execute('SELECT status, reserved_by FROM books WHERE id = %s', (book_id,))
-        book = cursor.fetchone()
-        if not book:
-            conn.close()
-            return jsonify({'error': 'Book not found'}), 404
-        
-        status, reserved_by = book
-        if status == 'borrowed' and reserved_by == user_id:
-            conn.execute('''
-                UPDATE books
-                SET status = %s, reserved_by = NULL
-                WHERE id = %s
-            ''', ('available', book_id))
-            
-            # Update loan record
-            conn.execute('''
-                UPDATE loans
-                SET returned_at = NOW()
-                WHERE book_id = %s AND user_id = %s AND returned_at IS NULL
-            ''', (book_id, user_id))
-            
-            conn.commit()
-            conn.close()
-            return jsonify({'success': True, 'message': 'Book returned'}), 200
-        else:
-            conn.close()
-            return jsonify({'error': 'Cannot return this book'}), 400
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# ============================================================================
-# HEALTH CHECK
-# ============================================================================
-
-@app.route('/api/health', methods=['GET'])
-def health():
-    """Health check endpoint"""
-    conn = get_db_connection()
-    if conn:
-        conn.close()
-        return jsonify({'status': 'healthy', 'database': 'connected'}), 200
-    else:
-        return jsonify({'status': 'unhealthy', 'database': 'disconnected'}), 500
-
-# ============================================================================
-# STARTUP
-# ============================================================================
-
-if __name__ == '__main__':
-    # Initialize database on startup
-    init_db()
+    const data = await response.json();
     
-    # Run Flask app
-    port = int(os.getenv('PORT', 5000))
-    app.run(debug=False, host='0.0.0.0', port=port)
+    if (!response.ok) {
+      throw new Error(data.error || 'Registration failed');
+    }
+    
+    return data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function loginUser(username, password) {
+  try {
+    const response = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Login failed');
+    }
+    
+    // Save session
+    sessionStorage.setItem('user_session', JSON.stringify(data.user));
+    return data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+// ============================================================================
+// BOOK OPERATIONS - CRUD
+// ============================================================================
+
+async function loadBooks() {
+  try {
+    const response = await fetch(`${API_BASE}/books`);
+    const data = await response.json();
+    
+    if (!response.ok) {
+      console.error('Error loading books:', data);
+      return [];
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Load books error:', error);
+    return [];
+  }
+}
+
+async function searchBooks(query) {
+  try {
+    const url = query 
+      ? `${API_BASE}/books?search=${encodeURIComponent(query)}`
+      : `${API_BASE}/books`;
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (!response.ok) {
+      return [];
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Search error:', error);
+    return [];
+  }
+}
+
+async function addBook({ title, author, isbn, image }) {
+  try {
+    const response = await fetch(`${API_BASE}/books`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, author, isbn, image })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to add book');
+    }
+    
+    return data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function updateBook(id, data) {
+  try {
+    const response = await fetch(`${API_BASE}/books/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to update book');
+    }
+    
+    return result;
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function deleteBook(id) {
+  try {
+    const response = await fetch(`${API_BASE}/books/${id}`, {
+      method: 'DELETE'
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to delete book');
+    }
+    
+    return data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+// ============================================================================
+// BOOK ACTIONS
+// ============================================================================
+
+async function reserveBook(id, username) {
+  try {
+    const response = await fetch(`${API_BASE}/books/${id}/reserve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to reserve book');
+    }
+    
+    return data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function borrowBook(id, username) {
+  try {
+    const response = await fetch(`${API_BASE}/books/${id}/borrow`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to borrow book');
+    }
+    
+    return data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function returnBook(id, username) {
+  try {
+    const response = await fetch(`${API_BASE}/books/${id}/return`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to return book');
+    }
+    
+    return data;
+  } catch (error) {
+    throw error;
+  }
+}
+
+// ============================================================================
+// RENDERING FUNCTIONS
+// ============================================================================
+
+async function renderBooks(query) {
+  const container = document.getElementById('books');
+  if (!container) return;
+  
+  container.innerHTML = '<p>Loading...</p>';
+  const items = await searchBooks(query);
+  container.innerHTML = '';
+  
+  items.forEach(b => {
+    const div = document.createElement('div');
+    div.className = 'book';
+    div.innerHTML = `
+      <div>
+        ${b.image 
+          ? `<img src="${b.image}" alt="${b.title}">` 
+          : '<div style="width:80px;height:100px;background:#eee;display:flex;align-items:center;justify-content:center">No image</div>'
+        }
+      </div>
+      <div style="flex:1">
+        <strong>${escapeHtml(b.title)}</strong>
+        <div>${escapeHtml(b.author)}</div>
+        <div>ISBN: ${escapeHtml(b.isbn || '')}</div>
+        <div>Status: ${escapeHtml(b.status)}</div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+async function renderBooksUser(query) {
+  const container = document.getElementById('books-user');
+  if (!container) return;
+  
+  container.innerHTML = '<p>Loading...</p>';
+  const user = currentUser();
+  const items = await searchBooks(query);
+  container.innerHTML = '';
+  
+  items.forEach(b => {
+    const div = document.createElement('div');
+    div.className = 'book';
+    
+    let buttons = '';
+    if (b.status === 'available' && user) {
+      buttons = `<button onclick="tryReserve(${b.id})">Rezervēt</button>`;
+    }
+    if (b.status === 'borrowed' && user && b.reserved_by === user.id) {
+      buttons = `<button onclick="tryReturn(${b.id})">Atgriezt</button>`;
+    }
+    
+    div.innerHTML = `
+      <div>
+        ${b.image 
+          ? `<img src="${b.image}" alt="${b.title}">` 
+          : '<div style="width:80px;height:100px;background:#eee;display:flex;align-items:center;justify-content:center">No image</div>'
+        }
+      </div>
+      <div style="flex:1">
+        <strong>${escapeHtml(b.title)}</strong>
+        <div>${escapeHtml(b.author)}</div>
+        <div>Status: ${escapeHtml(b.status)}</div>
+        ${buttons}
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+async function renderBooksAdmin() {
+  const container = document.getElementById('books-admin');
+  if (!container) return;
+  
+  container.innerHTML = '<p>Loading...</p>';
+  const items = await loadBooks();
+  container.innerHTML = '';
+  
+  items.forEach(b => {
+    const div = document.createElement('div');
+    div.className = 'book';
+    div.innerHTML = `
+      <div>
+        ${b.image 
+          ? `<img src="${b.image}" alt="${b.title}">` 
+          : '<div style="width:80px;height:100px;background:#eee;display:flex;align-items:center;justify-content:center">No image</div>'
+        }
+      </div>
+      <div style="flex:1">
+        <strong>${escapeHtml(b.title)}</strong>
+        <div>${escapeHtml(b.author)}</div>
+        <div>ISBN: ${escapeHtml(b.isbn || '')}</div>
+        <div>Status: ${escapeHtml(b.status)}</div>
+        <div style="margin-top:6px">
+          <button onclick="adminEdit(${b.id})">Rediģēt</button>
+          <button onclick="adminDelete(${b.id})">Dzēst</button>
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// ============================================================================
+// ADMIN FUNCTIONS
+// ============================================================================
+
+async function adminEdit(id) {
+  const books = await loadBooks();
+  const b = books.find(x => x.id === id);
+  if (!b) return;
+  
+  document.getElementById('book-id').value = b.id;
+  document.getElementById('title').value = b.title;
+  document.getElementById('author').value = b.author;
+  document.getElementById('isbn').value = b.isbn || '';
+}
+
+async function adminDelete(id) {
+  if (confirm('Tiešām dzēst?')) {
+    try {
+      await deleteBook(id);
+      alert('Grāmata dzēsta');
+      renderBooksAdmin();
+    } catch (error) {
+      alert('Kļūda: ' + error.message);
+    }
+  }
+}
+
+// ============================================================================
+// UI ACTIONS
+// ============================================================================
+
+async function tryReserve(id) {
+  const usr = currentUser();
+  if (!usr) {
+    if (confirm('Lai rezervētu, nepieciešams pieslēgties. Atvērt User lapu?')) {
+      location.href = 'user.html';
+    }
+    return;
+  }
+  
+  try {
+    await reserveBook(id, usr.username);
+    alert('Rezervēta ✅');
+    renderBooksUser('');
+  } catch (error) {
+    alert('Kļūda: ' + error.message);
+  }
+}
+
+async function tryReturn(id) {
+  const usr = currentUser();
+  if (!usr) {
+    alert('Jābūt pieslēgtam');
+    return;
+  }
+  
+  try {
+    await returnBook(id, usr.username);
+    alert('Atgriezts ✅');
+    renderBooksUser('');
+  } catch (error) {
+    alert('Kļūda: ' + error.message);
+  }
+}
+
+// ============================================================================
+// UTILITIES
+// ============================================================================
+
+function escapeHtml(s) {
+  return (s || '').toString()
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function fileToDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ============================================================================
+// EXPOSE FUNCTIONS
+// ============================================================================
+
+window.renderBooks = renderBooks;
+window.renderBooksUser = renderBooksUser;
+window.renderBooksAdmin = renderBooksAdmin;
+window.tryReserve = tryReserve;
+window.tryReturn = tryReturn;
+window.adminEdit = adminEdit;
+window.adminDelete = adminDelete;
+window.addBook = addBook;
+window.updateBook = updateBook;
+window.deleteBook = deleteBook;
+window.registerUser = registerUser;
+window.loginUser = loginUser;
+window.logout = logout;
+window.currentUser = currentUser;
