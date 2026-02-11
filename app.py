@@ -102,7 +102,6 @@ def register():
     """Register a new user"""
     try:
         data = request.json
-        print(f"DEBUG: Register called with data: {data}")
         username = data.get('username', '').strip()
         password = data.get('password', '').strip()
         
