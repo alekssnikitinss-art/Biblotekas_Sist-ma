@@ -247,16 +247,27 @@ async function renderBooksUser(query) {
 async function renderBooksAdmin() {
   const container = document.getElementById('books-admin');
   if (!container) return;
+
   container.innerHTML = '<p>Loading...</p>';
-  const items = await loadBooks();
+
+  let allBooks = await loadBooks();
+
+  // Optional: ielādē rezervētās grāmatas
+  try {
+    const reserved = await fetch(`${API_BASE}/books/reserved`).then(r => r.json());
+    if (Array.isArray(reserved)) allBooks = [...allBooks, ...reserved];
+  } catch(e) {
+    console.warn('Reserved books could not be loaded:', e);
+  }
+
   container.innerHTML = '';
 
-  items.forEach(b => {
+  allBooks.forEach(b => {
     const div = document.createElement('div');
     div.className = 'book';
     div.innerHTML = `
       <div>
-        ${b.image ? `<img src="${b.image}" alt="${b.title}">` 
+        ${b.image ? `<img src="${b.image}" alt="${b.title}">`
           : '<div style="width:80px;height:100px;background:#eee;display:flex;align-items:center;justify-content:center">No image</div>'}
       </div>
       <div style="flex:1">
@@ -267,6 +278,7 @@ async function renderBooksAdmin() {
         <div style="margin-top:6px">
           <button onclick="adminEdit(${b.id})">Rediģēt</button>
           <button onclick="adminDelete(${b.id})">Dzēst</button>
+          ${b.status === 'reserved' ? `<button onclick="returnBook(${b.id}, '${b.reserved_by}')">Atgriezt</button>` : ''}
         </div>
       </div>
     `;
