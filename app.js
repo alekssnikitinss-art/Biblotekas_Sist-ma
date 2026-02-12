@@ -1,5 +1,5 @@
 // app.js — Uses Flask API backend with PostgreSQL database
-// API Base URL (change based on environment)
+// API Base URL
 const API_BASE = window.location.hostname === 'localhost' 
   ? 'http://localhost:5000/api'
   : 'https://biblioteka-backend-4i2b.onrender.com/api';
@@ -29,13 +29,9 @@ async function registerUser(username, password) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
-    
+
     const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || 'Registration failed');
-    }
-    
+    if (!response.ok) throw new Error(data.error || 'Registration failed');
     return data;
   } catch (error) {
     throw error;
@@ -49,13 +45,10 @@ async function loginUser(username, password) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
-    
+
     const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || 'Login failed');
-    }
-    
+    if (!response.ok) throw new Error(data.error || 'Login failed');
+
     // Save session
     sessionStorage.setItem('user_session', JSON.stringify(data.user));
     return data;
@@ -72,13 +65,8 @@ async function loadBooks() {
   try {
     const response = await fetch(`${API_BASE}/books`);
     const data = await response.json();
-    
-    if (!response.ok) {
-      console.error('Error loading books:', data);
-      return [];
-    }
-    
-    return data;
+    if (!response.ok) console.error('Error loading books:', data);
+    return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error('Load books error:', error);
     return [];
@@ -90,15 +78,10 @@ async function searchBooks(query) {
     const url = query 
       ? `${API_BASE}/books?search=${encodeURIComponent(query)}`
       : `${API_BASE}/books`;
-    
+
     const response = await fetch(url);
     const data = await response.json();
-    
-    if (!response.ok) {
-      return [];
-    }
-    
-    return data;
+    return response.ok && Array.isArray(data) ? data : [];
   } catch (error) {
     console.error('Search error:', error);
     return [];
@@ -112,13 +95,8 @@ async function addBook({ title, author, isbn, image }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, author, isbn, image })
     });
-    
     const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to add book');
-    }
-    
+    if (!response.ok) throw new Error(data.error || 'Failed to add book');
     return data;
   } catch (error) {
     throw error;
@@ -132,13 +110,8 @@ async function updateBook(id, data) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    
     const result = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(result.error || 'Failed to update book');
-    }
-    
+    if (!response.ok) throw new Error(result.error || 'Failed to update book');
     return result;
   } catch (error) {
     throw error;
@@ -147,16 +120,9 @@ async function updateBook(id, data) {
 
 async function deleteBook(id) {
   try {
-    const response = await fetch(`${API_BASE}/books/${id}`, {
-      method: 'DELETE'
-    });
-    
+    const response = await fetch(`${API_BASE}/books/${id}`, { method: 'DELETE' });
     const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to delete book');
-    }
-    
+    if (!response.ok) throw new Error(data.error || 'Failed to delete book');
     return data;
   } catch (error) {
     throw error;
@@ -174,13 +140,8 @@ async function reserveBook(id, username) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username })
     });
-    
     const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to reserve book');
-    }
-    
+    if (!response.ok) throw new Error(data.error || 'Failed to reserve book');
     return data;
   } catch (error) {
     throw error;
@@ -194,13 +155,8 @@ async function borrowBook(id, username) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username })
     });
-    
     const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to borrow book');
-    }
-    
+    if (!response.ok) throw new Error(data.error || 'Failed to borrow book');
     return data;
   } catch (error) {
     throw error;
@@ -214,13 +170,8 @@ async function returnBook(id, username) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username })
     });
-    
     const data = await response.json();
-    
-    if (!response.ok) {
-      throw new Error(data.error || 'Failed to return book');
-    }
-    
+    if (!response.ok) throw new Error(data.error || 'Failed to return book');
     return data;
   } catch (error) {
     throw error;
@@ -228,26 +179,22 @@ async function returnBook(id, username) {
 }
 
 // ============================================================================
-// RENDERING FUNCTIONS
+// RENDER FUNCTIONS
 // ============================================================================
 
 async function renderBooks(query) {
   const container = document.getElementById('books');
   if (!container) return;
-  
   container.innerHTML = '<p>Loading...</p>';
   const items = await searchBooks(query);
   container.innerHTML = '';
-  
   items.forEach(b => {
     const div = document.createElement('div');
     div.className = 'book';
     div.innerHTML = `
       <div>
-        ${b.image 
-          ? `<img src="${b.image}" alt="${b.title}">` 
-          : '<div style="width:80px;height:100px;background:#eee;display:flex;align-items:center;justify-content:center">No image</div>'
-        }
+        ${b.image ? `<img src="${b.image}" alt="${b.title}">` 
+          : '<div style="width:80px;height:100px;background:#eee;display:flex;align-items:center;justify-content:center">No image</div>'}
       </div>
       <div style="flex:1">
         <strong>${escapeHtml(b.title)}</strong>
@@ -263,30 +210,28 @@ async function renderBooks(query) {
 async function renderBooksUser(query) {
   const container = document.getElementById('books-user');
   if (!container) return;
-  
-  container.innerHTML = '<p>Loading...</p>';
+
   const user = currentUser();
+  container.innerHTML = '<p>Loading...</p>';
   const items = await searchBooks(query);
   container.innerHTML = '';
-  
+
   items.forEach(b => {
     const div = document.createElement('div');
     div.className = 'book';
-    
     let buttons = '';
+
     if (b.status === 'available' && user) {
       buttons = `<button onclick="tryReserve(${b.id})">Rezervēt</button>`;
     }
     if (b.status === 'borrowed' && user && b.reserved_by === user.id) {
       buttons = `<button onclick="tryReturn(${b.id})">Atgriezt</button>`;
     }
-    
+
     div.innerHTML = `
       <div>
-        ${b.image 
-          ? `<img src="${b.image}" alt="${b.title}">` 
-          : '<div style="width:80px;height:100px;background:#eee;display:flex;align-items:center;justify-content:center">No image</div>'
-        }
+        ${b.image ? `<img src="${b.image}" alt="${b.title}">` 
+          : '<div style="width:80px;height:100px;background:#eee;display:flex;align-items:center;justify-content:center">No image</div>'}
       </div>
       <div style="flex:1">
         <strong>${escapeHtml(b.title)}</strong>
@@ -302,20 +247,17 @@ async function renderBooksUser(query) {
 async function renderBooksAdmin() {
   const container = document.getElementById('books-admin');
   if (!container) return;
-  
   container.innerHTML = '<p>Loading...</p>';
   const items = await loadBooks();
   container.innerHTML = '';
-  
+
   items.forEach(b => {
     const div = document.createElement('div');
     div.className = 'book';
     div.innerHTML = `
       <div>
-        ${b.image 
-          ? `<img src="${b.image}" alt="${b.title}">` 
-          : '<div style="width:80px;height:100px;background:#eee;display:flex;align-items:center;justify-content:center">No image</div>'
-        }
+        ${b.image ? `<img src="${b.image}" alt="${b.title}">` 
+          : '<div style="width:80px;height:100px;background:#eee;display:flex;align-items:center;justify-content:center">No image</div>'}
       </div>
       <div style="flex:1">
         <strong>${escapeHtml(b.title)}</strong>
@@ -340,7 +282,7 @@ async function adminEdit(id) {
   const books = await loadBooks();
   const b = books.find(x => x.id === id);
   if (!b) return;
-  
+
   document.getElementById('book-id').value = b.id;
   document.getElementById('title').value = b.title;
   document.getElementById('author').value = b.author;
@@ -353,6 +295,7 @@ async function adminDelete(id) {
       await deleteBook(id);
       alert('Grāmata dzēsta');
       renderBooksAdmin();
+      renderBooksUser('');
     } catch (error) {
       alert('Kļūda: ' + error.message);
     }
@@ -371,7 +314,7 @@ async function tryReserve(id) {
     }
     return;
   }
-  
+
   try {
     await reserveBook(id, usr.username);
     alert('Rezervēta ✅');
@@ -387,7 +330,7 @@ async function tryReturn(id) {
     alert('Jābūt pieslēgtam');
     return;
   }
-  
+
   try {
     await returnBook(id, usr.username);
     alert('Atgriezts ✅');
