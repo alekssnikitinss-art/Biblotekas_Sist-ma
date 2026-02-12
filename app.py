@@ -532,7 +532,10 @@ def health():
 if __name__ == '__main__':
     # Initialize database on startup
     init_db()
-    
+
+if __name__ == '__main__':
+    port = int(os.getenv('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
     # Run Flask app
     port = int(os.getenv('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
