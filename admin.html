@@ -48,7 +48,6 @@
   <script>
     // admin page now uses the shared auth. Admin can login via user credentials.
     (async function(){
-      await initAuth();
       // If already logged in as admin, show admin area
       const usr = currentUser();
       if(usr && usr.role==='admin'){
