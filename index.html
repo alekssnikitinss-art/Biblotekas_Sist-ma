@@ -61,5 +61,20 @@
 
 </div>
 
+  <script>
+      if(ok){
+  alert('Pieslēgts');
+  const usr = currentUser();
+  
+  // Parādi admin paneli JA admin
+  if(usr && usr.role === 'admin') {
+    document.getElementById('admin-panel').style.display = 'block';
+    renderBooksAdmin();
+  }
+  
+  renderBooksUser('');
+}
+   
+  </script>
 </body>
 </html>
