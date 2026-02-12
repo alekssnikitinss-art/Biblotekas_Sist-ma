@@ -10,9 +10,6 @@ import os
 from datetime import datetime
 import bcrypt
 
-app = Flask(__name__)
-CORS(app)
-
 # Database configuration from environment variables
 DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/biblioteka')
 
@@ -92,6 +89,14 @@ def init_db():
         return False
     finally:
         conn.close()
+
+# INITIALIZE DATABASE ON STARTUP (BEFORE Flask app)
+print("Initializing database...")
+init_db()
+
+# CREATE FLASK APP (AFTER init_db)
+app = Flask(__name__)
+CORS(app)
 
 # ============================================================================
 # AUTHENTICATION ENDPOINTS
@@ -526,16 +531,9 @@ def health():
         return jsonify({'status': 'unhealthy', 'database': 'disconnected'}), 500
 
 # ============================================================================
-# STARTUP
+# STARTUP (only for local development)
 # ============================================================================
 
 if __name__ == '__main__':
-    # Initialize database on startup
-    init_db()
-
-if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
-    app.run(debug=False, host='0.0.0.0', port=port)
-    # Run Flask app
     port = int(os.getenv('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
