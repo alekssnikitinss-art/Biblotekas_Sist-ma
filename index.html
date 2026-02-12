@@ -36,7 +36,6 @@
   <script>
     // guest view
     (async function(){
-      await initAuth();
       const searchEl = document.getElementById('search');
       searchEl.addEventListener('input', () => renderBooks(searchEl.value));
       renderBooks('');
