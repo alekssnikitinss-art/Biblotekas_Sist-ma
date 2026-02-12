@@ -3,44 +3,63 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Bibliotēka — Mājas (Guest)</title>
+  <title>Bibliotēka — Lietotājs</title>
   <link rel="stylesheet" href="stylessheet/style.css">
   <style>
-    /* small overrides */
     .container{max-width:900px;margin:20px auto;padding:10px}
     nav a{margin-right:12px}
     .book{border:1px solid #ddd;padding:8px;margin:8px 0;display:flex;gap:12px}
     .book img{width:80px;height:100px;object-fit:cover}
+    input,button{margin:4px 0;padding:6px}
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>Bibliotēka</h1>
-      <nav>
-        <a href="index.html">Guest</a>
-        <a href="user.html">User</a>
-        <a href="admin.html">Admin</a>
-      </nav>
-    </header>
 
-    <section>
-      <h2>Grāmatu saraksts (Publiskais skats)</h2>
-      <input id="search" placeholder="Meklēt pēc nosaukuma vai autora" style="width:100%" />
-      <div id="books"></div>
-    </section>
+<div class="container">
 
-  
+  <header>
+    <h1>Bibliotēka — User</h1>
+    <nav>
+      <a href="index.html">Guest</a>
+      <a href="user.html">User</a>
+    </nav>
+  </header>
+
+  <!-- LOGIN -->
+  <section id="login-section">
+    <h2>Pieslēgties</h2>
+    <input placeholder="Lietotājvārds" style="width:100%" />
+    <input type="password" placeholder="Parole" style="width:100%" />
+    <button>Login</button>
+  </section>
+
+  <!-- ADMIN PANEL -->
+  <div id="admin-panel" style="display:none; margin-top:20px; border:2px solid red; padding:10px;">
+    <h3>🔐 Admin panelis</h3>
+    
+    <h4>Pievienot / Rediģēt grāmatu</h4>
+    <input type="hidden" />
+    <input placeholder="Nosaukums" style="width:100%" />
+    <input placeholder="Autors" style="width:100%" />
+    <input placeholder="ISBN" style="width:100%" />
+    <input type="file" accept="image/png,image/jpeg" />
+    <div style="margin-top:8px">
+      <button>Pievienot / Atjaunināt</button>
+      <button>Notīrīt</button>
+    </div>
+
+    <h4>Visas grāmatas (Admin pārvaldība)</h4>
+    <div></div>
   </div>
 
-  <script src="app.js"></script>
-  <script>
-    // guest view
-    (async function(){
-      const searchEl = document.getElementById('search');
-      searchEl.addEventListener('input', () => renderBooks(searchEl.value));
-      renderBooks('');
-    })();
-  </script>
+  <!-- USER VIEW -->
+  <section id="user-books">
+    <h2>Grāmatu saraksts (User)</h2>
+    <input placeholder="Meklēt..." style="width:100%" />
+    <div></div>
+  </section>
+
+</div>
+
 </body>
 </html>
