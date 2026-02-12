@@ -28,9 +28,9 @@
   <!-- LOGIN -->
   <section id="login-section">
     <h2>Pieslēgties</h2>
-    <input placeholder="Lietotājvārds" style="width:100%" />
-    <input type="password" placeholder="Parole" style="width:100%" />
-    <button>Login</button>
+    <input id="login-user" placeholder="Lietotājvārds" style="width:100%" />
+    <input id="login-pass" type="password" placeholder="Parole" style="width:100%" />
+    <button id="btn-login">Login</button>
   </section>
 
   <!-- ADMIN PANEL -->
@@ -38,43 +38,49 @@
     <h3>🔐 Admin panelis</h3>
     
     <h4>Pievienot / Rediģēt grāmatu</h4>
-    <input type="hidden" />
-    <input placeholder="Nosaukums" style="width:100%" />
-    <input placeholder="Autors" style="width:100%" />
-    <input placeholder="ISBN" style="width:100%" />
-    <input type="file" accept="image/png,image/jpeg" />
+    <input id="book-id" type="hidden" />
+    <input id="title" placeholder="Nosaukums" style="width:100%" />
+    <input id="author" placeholder="Autors" style="width:100%" />
+    <input id="isbn" placeholder="ISBN" style="width:100%" />
+    <input id="image-file" type="file" accept="image/png,image/jpeg" />
     <div style="margin-top:8px">
-      <button>Pievienot / Atjaunināt</button>
-      <button>Notīrīt</button>
+      <button id="btn-add">Pievienot/Atjaunināt</button>
+      <button id="btn-clear">Notīrīt</button>
     </div>
 
     <h4>Visas grāmatas (Admin pārvaldība)</h4>
-    <div></div>
+    <div id="books-admin"></div>
   </div>
 
   <!-- USER VIEW -->
-  <section id="user-books">
+  <section id="user-books" style="display:none">
     <h2>Grāmatu saraksts (User)</h2>
-    <input placeholder="Meklēt..." style="width:100%" />
-    <div></div>
+    <input id="search-user" placeholder="Meklēt..." style="width:100%" />
+    <div id="books-user"></div>
   </section>
 
 </div>
 
-  <script>
-      if(ok){
-          alert('Pieslēgts');
-          const usr = currentUser();
-  
-          // Parādi admin paneli JA admin
-          if(usr && usr.role === 'admin') {
-          document.getElementById('admin-panel').style.display = 'block';
-          renderBooksAdmin();
-        }
-  
-       renderBooksUser('');
+<script src="app.js"></script>
+
+<script>
+  if(ok){
+    alert('Pieslēgts');
+
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('user-books').style.display = 'block';
+
+    const usr = currentUser();
+
+    // Parādi admin paneli JA admin
+    if(usr && usr.role === 'admin') {
+      document.getElementById('admin-panel').style.display = 'block';
+      renderBooksAdmin();
+    }
+
+    renderBooksUser('');
   }
-   
-  </script>
+</script>
+
 </body>
 </html>
