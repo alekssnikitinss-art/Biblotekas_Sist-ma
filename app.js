@@ -1,12 +1,12 @@
-
 // app.js — Uses Flask API backend with PostgreSQL database
 const API_BASE = window.location.hostname === 'localhost' 
   ? 'http://localhost:5000/api'
   : 'https://biblioteka-backend-4i2b.onrender.com/api';
 
-// =======================
+// ============================================================================
 // SESSION MANAGEMENT
-// =======================
+// ============================================================================
+
 function currentUser() {
   const session = sessionStorage.getItem('user_session');
   return session ? JSON.parse(session) : null;
@@ -14,71 +14,65 @@ function currentUser() {
 
 function logout() {
   sessionStorage.removeItem('user_session');
-  window.location.href = 'user.html';
+  location.reload();
 }
 
-// =======================
+// ============================================================================
 // AUTHENTICATION
-// =======================
+// ============================================================================
+
 async function registerUser(username, password) {
-  const res = await fetch(`${API_BASE}/auth/register`, {
-    method: 'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({username,password})
+  const response = await fetch(`${API_BASE}/auth/register`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({username, password})
   });
-  const data = await res.json();
-  if(!res.ok) throw new Error(data.error || 'Registration failed');
+  const data = await response.json();
+  if(!response.ok) throw new Error(data.error || 'Registration failed');
   return data;
 }
 
 async function loginUser(username,password){
-  const res = await fetch(`${API_BASE}/auth/login`,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
+  const response = await fetch(`${API_BASE}/auth/login`,{
+    method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({username,password})
   });
-  const data = await res.json();
-  if(!res.ok) throw new Error(data.error || 'Login failed');
+  const data = await response.json();
+  if(!response.ok) throw new Error(data.error || 'Login failed');
   sessionStorage.setItem('user_session', JSON.stringify(data.user));
   return data;
 }
 
-// =======================
-// BOOK OPERATIONS
-// =======================
+// ============================================================================
+// BOOK CRUD
+// ============================================================================
+
 async function loadBooks(){
   try {
     const res = await fetch(`${API_BASE}/books`);
     const data = await res.json();
-    if(!res.ok) throw new Error(data.error || 'Failed to load books');
+    if(!res.ok) throw new Error(data.error || 'Load books failed');
     return data;
-  } catch(e){
-    console.error(e);
-    return [];
-  }
+  } catch(e) { console.error(e); return []; }
 }
 
 async function searchBooks(query){
-  const url = query ? `${API_BASE}/books?search=${encodeURIComponent(query)}` : `${API_BASE}/books`;
-  try {
+  try{
+    const url = query ? `${API_BASE}/books?search=${encodeURIComponent(query)}` : `${API_BASE}/books`;
     const res = await fetch(url);
     const data = await res.json();
     if(!res.ok) return [];
     return data;
-  } catch(e){
-    console.error(e);
-    return [];
-  }
+  } catch(e){ console.error(e); return []; }
 }
 
-async function addBook({title, author, isbn, image}){
+async function addBook(book){ // {title,author,isbn,image}
   const res = await fetch(`${API_BASE}/books`,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({title, author, isbn, image})
+    body: JSON.stringify(book)
   });
   const data = await res.json();
-  if(!res.ok) throw new Error(data.error || 'Failed to add book');
+  if(!res.ok) throw new Error(data.error || 'Add book failed');
   return data;
 }
 
@@ -89,59 +83,58 @@ async function updateBook(id,data){
     body: JSON.stringify(data)
   });
   const result = await res.json();
-  if(!res.ok) throw new Error(result.error || 'Failed to update book');
+  if(!res.ok) throw new Error(result.error || 'Update failed');
   return result;
 }
 
 async function deleteBook(id){
-  const res = await fetch(`${API_BASE}/books/${id}`, {method:'DELETE'});
+  const res = await fetch(`${API_BASE}/books/${id}`,{method:'DELETE'});
   const data = await res.json();
-  if(!res.ok) throw new Error(data.error || 'Failed to delete book');
+  if(!res.ok) throw new Error(data.error || 'Delete failed');
   return data;
 }
 
-// =======================
+// ============================================================================
 // BOOK ACTIONS
-// =======================
+// ============================================================================
+
 async function reserveBook(id, username){
-  if(!username) username = currentUser()?.username;
   const res = await fetch(`${API_BASE}/books/${id}/reserve`,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({username})
   });
   const data = await res.json();
-  if(!res.ok) throw new Error(data.error || 'Failed to reserve book');
+  if(!res.ok) throw new Error(data.error || 'Reserve failed');
   return data;
 }
 
 async function borrowBook(id, username){
-  if(!username) username = currentUser()?.username;
   const res = await fetch(`${API_BASE}/books/${id}/borrow`,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({username})
   });
   const data = await res.json();
-  if(!res.ok) throw new Error(data.error || 'Failed to borrow book');
+  if(!res.ok) throw new Error(data.error || 'Borrow failed');
   return data;
 }
 
 async function returnBook(id, username){
-  if(!username) username = currentUser()?.username;
   const res = await fetch(`${API_BASE}/books/${id}/return`,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({username})
   });
   const data = await res.json();
-  if(!res.ok) throw new Error(data.error || 'Failed to return book');
+  if(!res.ok) throw new Error(data.error || 'Return failed');
   return data;
 }
 
-// =======================
+// ============================================================================
 // RENDER FUNCTIONS
-// =======================
+// ============================================================================
+
 async function renderBooksUser(query){
   const container = document.getElementById('books-user');
   if(!container) return;
@@ -150,7 +143,7 @@ async function renderBooksUser(query){
   const items = await searchBooks(query);
   container.innerHTML = '';
 
-  items.forEach(b=>{
+  items.forEach(b => {
     const div = document.createElement('div');
     div.className='book';
 
@@ -158,14 +151,14 @@ async function renderBooksUser(query){
     if(b.status==='available' && user){
       buttons=`<button onclick="tryReserve(${b.id})">Rezervēt</button>`;
     }
-    // Atgriezt tikai ja user ir aizņēmies vai rezervējis
-    if(b.status==='borrowed' && user && (b.reserved_by===user.id || b.borrowed_by===user.id)){
+    if((b.status==='reserved' || b.status==='borrowed') && user && b.reserved_by===user.username){
       buttons=`<button onclick="tryReturn(${b.id})">Atgriezt</button>`;
     }
 
     div.innerHTML=`
       <div>
-        ${b.image ? `<img src="${b.image}" alt="${b.title}">` : '<div style="width:80px;height:100px;background:#eee;display:flex;align-items:center;justify-content:center">No image</div>'}
+        ${b.image ? `<img src="${b.image}" alt="${b.title}">` :
+        '<div style="width:80px;height:100px;background:#eee;display:flex;align-items:center;justify-content:center">No image</div>'}
       </div>
       <div style="flex:1">
         <strong>${escapeHtml(b.title)}</strong>
@@ -186,11 +179,12 @@ async function renderBooksAdmin(){
   container.innerHTML='';
 
   items.forEach(b=>{
-    const div=document.createElement('div');
+    const div = document.createElement('div');
     div.className='book';
     div.innerHTML=`
       <div>
-        ${b.image ? `<img src="${b.image}" alt="${b.title}">` : '<div style="width:80px;height:100px;background:#eee;display:flex;align-items:center;justify-content:center">No image</div>'}
+        ${b.image ? `<img src="${b.image}" alt="${b.title}">` :
+        '<div style="width:80px;height:100px;background:#eee;display:flex;align-items:center;justify-content:center">No image</div>'}
       </div>
       <div style="flex:1">
         <strong>${escapeHtml(b.title)}</strong>
@@ -200,7 +194,7 @@ async function renderBooksAdmin(){
         <div style="margin-top:6px">
           <button onclick="adminEdit(${b.id})">Rediģēt</button>
           <button onclick="adminDelete(${b.id})">Dzēst</button>
-          <button onclick="adminReturn(${b.id})">Atgriezt</button>
+          ${b.status==='reserved'||b.status==='borrowed' ? `<button onclick="adminReturn(${b.id})">Atgriezt</button>` : ''}
         </div>
       </div>
     `;
@@ -208,14 +202,14 @@ async function renderBooksAdmin(){
   });
 }
 
-// =======================
+// ============================================================================
 // ADMIN FUNCTIONS
-// =======================
+// ============================================================================
+
 async function adminEdit(id){
   const books = await loadBooks();
   const b = books.find(x=>x.id===id);
   if(!b) return;
-
   document.getElementById('book-id').value=b.id;
   document.getElementById('title').value=b.title;
   document.getElementById('author').value=b.author;
@@ -226,86 +220,79 @@ async function adminDelete(id){
   if(!confirm('Tiešām dzēst?')) return;
   try{
     await deleteBook(id);
-    alert('Grāmata dzēsta');
+    alert('Grāmata dzēsta ✅');
     renderBooksAdmin();
     renderBooksUser('');
-  } catch(e){
-    alert('Kļūda: '+e.message);
-  }
+  } catch(e){ alert('Kļūda: '+e.message); }
 }
 
 async function adminReturn(id){
+  const books = await loadBooks();
+  const b = books.find(x=>x.id===id);
+  if(!b){ alert('Grāmata nav atrasta'); return; }
+  const username = b.borrowed_by || b.reserved_by;
+  if(!username){ alert('Nav lietotāja, kam atgriezt grāmatu'); return; }
+
+  try{
+    await returnBook(id, username);
+    alert(`Grāmata atgriezta ✅ (${username})`);
+    renderBooksAdmin();
+    renderBooksUser('');
+  } catch(e){ alert('Kļūda: '+e.message); }
+}
+
+// ============================================================================
+// USER ACTIONS
+// ============================================================================
+
+async function tryReserve(id){
   const user = currentUser();
   if(!user){ alert('Jābūt pieslēgtam'); return; }
   try{
-    await returnBook(id,user.username);
-    alert('Grāmata atgriezta ✅');
-    renderBooksAdmin();
-    renderBooksUser('');
-  } catch(e){
-    alert('Kļūda: '+e.message);
-  }
-}
-
-// =======================
-// UI ACTIONS
-// =======================
-async function tryReserve(id){
-  const user = currentUser();
-  if(!user){ 
-    if(confirm('Lai rezervētu, nepieciešams pieslēgties. Atvērt User lapu?')){
-      location.href='user.html';
-    }
-    return;
-  }
-  try{
-    await reserveBook(id,user.username);
+    await reserveBook(id, user.username);
     alert('Rezervēta ✅');
     renderBooksUser('');
-  } catch(e){
-    alert('Kļūda: '+e.message);
-  }
+    renderBooksAdmin();
+  } catch(e){ alert('Kļūda: '+e.message); }
 }
 
 async function tryReturn(id){
   const user = currentUser();
   if(!user){ alert('Jābūt pieslēgtam'); return; }
   try{
-    await returnBook(id,user.username);
+    await returnBook(id, user.username);
     alert('Atgriezts ✅');
     renderBooksUser('');
     renderBooksAdmin();
-  } catch(e){
-    alert('Kļūda: '+e.message);
-  }
+  } catch(e){ alert('Kļūda: '+e.message); }
 }
 
-// =======================
+// ============================================================================
 // UTILITIES
-// =======================
-function escapeHtml(s){
-  return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+// ============================================================================
+
+function escapeHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function fileToDataURL(file){
   return new Promise((resolve,reject)=>{
     const reader = new FileReader();
-    reader.onload=e=>resolve(e.target.result);
-    reader.onerror=reject;
+    reader.onload = e => resolve(e.target.result);
+    reader.onerror = reject;
     reader.readAsDataURL(file);
   });
 }
 
-// =======================
-// EXPOSE
-// =======================
+// ============================================================================
+// EXPOSE FUNCTIONS
+// ============================================================================
+
 window.renderBooksUser = renderBooksUser;
 window.renderBooksAdmin = renderBooksAdmin;
-window.tryReserve = tryReserve;
-window.tryReturn = tryReturn;
 window.adminEdit = adminEdit;
 window.adminDelete = adminDelete;
 window.adminReturn = adminReturn;
+window.tryReserve = tryReserve;
+window.tryReturn = tryReturn;
 window.addBook = addBook;
 window.updateBook = updateBook;
 window.deleteBook = deleteBook;
