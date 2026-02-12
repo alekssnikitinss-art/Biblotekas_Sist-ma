@@ -46,20 +46,24 @@
 
   <script src="app.js"></script>
   <script>
-    // admin page now uses the shared auth. Admin can login via user credentials.
     (async function(){
-      // If already logged in as admin, show admin area
-      const usr = currentUser();
-      if(usr && usr.role==='admin'){
-        document.getElementById('admin-area').style.display='block';
-        renderBooksAdmin();
-      }
-
       document.getElementById('btn-admin-login').addEventListener('click', async () => {
-        const u = document.getElementById('admin-user').value; const p = document.getElementById('admin-pass').value;
-        const ok = await loginUser(u,p);
-        if(ok){ const cur = currentUser(); if(cur && cur.role==='admin'){ document.getElementById('admin-area').style.display='block'; renderBooksAdmin(); } else alert('Lietotājam nav admin tiesību'); }
-        else alert('Nepareizi akreditācijas dati');
+        const u = document.getElementById('admin-user').value.trim();
+        const p = document.getElementById('admin-pass').value;
+        
+        try {
+          const result = await loginUser(u, p);
+          const user = currentUser();
+          if (user && user.role === 'admin') {
+            document.getElementById('admin-area').style.display = 'block';
+            renderBooksAdmin();
+            alert('Pieslēgts kā admin ✅');
+          } else {
+            alert('Jums nav admin tiesību');
+          }
+        } catch (error) {
+          alert('Pieslēgšanās kļūda: ' + error.message);
+        }
       });
 
       document.getElementById('btn-add').addEventListener('click', async () => {
@@ -68,16 +72,72 @@
         const author = document.getElementById('author').value.trim();
         const isbn = document.getElementById('isbn').value.trim();
         const file = document.getElementById('image-file').files[0];
+        
         let img = null;
-        if(file){ img = await fileToDataURL(file); }
-        if(!title || !author){ alert('Ievadi nosaukumu un autoru'); return }
-        if(id) updateBook(id, {title,author,isbn,image:img}); else addBook({title,author,isbn,image:img});
-        clearForm(); renderBooksAdmin();
+        if (file) {
+          img = await fileToDataURL(file);
+        }
+        
+        if (!title || !author) {
+          alert('Ievadi nosaukumu un autoru');
+          return;
+        }
+        
+        try {
+          if (id) {
+            await updateBook(id, {title, author, isbn, image: img});
+          } else {
+            await addBook({title, author, isbn, image: img});
+          }
+          alert('Grāmata saglabāta ✅');
+          clearForm();
+          renderBooksAdmin();
+        } catch (error) {
+          alert('Kļūda: ' + error.message);
+        }
       });
 
-      function clearForm(){ document.getElementById('book-id').value=''; document.getElementById('title').value=''; document.getElementById('author').value=''; document.getElementById('isbn').value=''; document.getElementById('image-file').value=null }
+      document.getElementById('btn-clear').addEventListener('click', () => {
+        clearForm();
+      });
 
-      async function fileToDataURL(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=e=>res(e.target.result); r.onerror=rej; r.readAsDataURL(file); }) }
+      function clearForm() {
+        document.getElementById('book-id').value = '';
+        document.getElementById('title').value = '';
+        document.getElementById('author').value = '';
+        document.getElementById('isbn').value = '';
+        document.getElementById('image-file').value = '';
+      }
+
+      window.adminEdit = function(id) {
+        loadBooks().then(books => {
+          const b = books.find(x => x.id === id);
+          if (b) {
+            document.getElementById('book-id').value = b.id;
+            document.getElementById('title').value = b.title;
+            document.getElementById('author').value = b.author;
+            document.getElementById('isbn').value = b.isbn || '';
+          }
+        });
+      };
+
+      window.adminDelete = function(id) {
+        if (confirm('Tiešām dzēst?')) {
+          deleteBook(id).then(() => {
+            alert('Grāmata dzēsta ✅');
+            renderBooksAdmin();
+          }).catch(error => {
+            alert('Kļūda: ' + error.message);
+          });
+        }
+      };
+
+      // Check if already logged in as admin
+      const user = currentUser();
+      if (user && user.role === 'admin') {
+        document.getElementById('admin-area').style.display = 'block';
+        renderBooksAdmin();
+      }
     })();
   </script>
 </body>
