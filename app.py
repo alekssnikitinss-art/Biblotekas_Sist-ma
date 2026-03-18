@@ -462,7 +462,8 @@ def borrow_book(book_id):
         else:
             conn.close()
             return jsonify({'error': 'Cannot borrow this book'}), 400
-    @app.route('/api/books/<int:book_id>/return', methods=['POST'])
+
+@app.route('/api/books/<int:book_id>/return', methods=['POST'])
 def return_book(book_id):
     """Return a book"""
     try:
