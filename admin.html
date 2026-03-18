@@ -57,7 +57,7 @@
           if (user && user.role === 'admin') {
             document.getElementById('admin-area').style.display = 'block';
             renderBooksAdmin();
-            alert('Pieslēgts kā admin ✅');
+            alert('Pieslēgts kā admin ');
           } else {
             alert('Jums nav admin tiesību');
           }
@@ -89,7 +89,7 @@
           } else {
             await addBook({title, author, isbn, image: img});
           }
-          alert('Grāmata saglabāta ✅');
+          alert('Grāmata saglabāta ');
           clearForm();
           renderBooksAdmin();
         } catch (error) {
@@ -124,7 +124,7 @@
       window.adminDelete = function(id) {
         if (confirm('Tiešām dzēst?')) {
           deleteBook(id).then(() => {
-            alert('Grāmata dzēsta ✅');
+            alert('Grāmata dzēsta ');
             renderBooksAdmin();
           }).catch(error => {
             alert('Kļūda: ' + error.message);
