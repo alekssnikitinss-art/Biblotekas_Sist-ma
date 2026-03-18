@@ -462,60 +462,73 @@ def borrow_book(book_id):
         else:
             conn.close()
             return jsonify({'error': 'Cannot borrow this book'}), 400
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/books/<int:book_id>/return', methods=['POST'])
+    @app.route('/api/books/<int:book_id>/return', methods=['POST'])
 def return_book(book_id):
     """Return a book"""
     try:
         data = request.json
         username = data.get('username')
-        
+
         if not username:
             return jsonify({'error': 'Username required'}), 400
-        
+
         conn = get_db_connection()
-        
-        # Get user ID
-        cursor = conn.execute('SELECT id FROM users WHERE username = %s', (username,))
+
+        # Dabū user id un role
+        cursor = conn.execute(
+            'SELECT id, role FROM users WHERE username = %s',
+            (username,)
+        )
         user = cursor.fetchone()
+
         if not user:
             conn.close()
             return jsonify({'error': 'User not found'}), 404
-        user_id = user[0]
-        
-        # Check book
-        cursor = conn.execute('SELECT status, reserved_by FROM books WHERE id = %s', (book_id,))
+
+        user_id, user_role = user
+
+        # Dabū grāmatas statusu un reserved_by
+        cursor = conn.execute(
+            'SELECT status, reserved_by FROM books WHERE id = %s',
+            (book_id,)
+        )
         book = cursor.fetchone()
+
         if not book:
             conn.close()
             return jsonify({'error': 'Book not found'}), 404
-        
+
         status, reserved_by = book
-        if status == 'borrowed' and reserved_by == user_id:
+
+        # User var atgriezt savu borrowed grāmatu
+        # Admin var atgriezt jebkuru borrowed grāmatu
+        if status == 'borrowed' and (reserved_by == user_id or user_role == 'admin'):
             conn.execute('''
                 UPDATE books
                 SET status = %s, reserved_by = NULL
                 WHERE id = %s
             ''', ('available', book_id))
-            
-            # Update loan record
+
+            # Aizver aktīvo loan ierakstu īstajam aizņēmējam
             conn.execute('''
                 UPDATE loans
                 SET returned_at = NOW()
                 WHERE book_id = %s AND user_id = %s AND returned_at IS NULL
-            ''', (book_id, user_id))
-            
+            ''', (book_id, reserved_by))
+
             conn.commit()
             conn.close()
-            return jsonify({'success': True, 'message': 'Book returned'}), 200
-        else:
-            conn.close()
-            return jsonify({'error': 'Cannot return this book'}), 400
+
+            return jsonify({
+                'success': True,
+                'message': 'Book returned successfully'
+            }), 200
+
+        conn.close()
+        return jsonify({'error': 'Cannot return this book'}), 400
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 # ============================================================================
 # HEALTH CHECK
 # ============================================================================
