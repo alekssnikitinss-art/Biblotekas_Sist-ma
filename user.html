@@ -32,13 +32,13 @@
   <!-- Auth Section -->
   <div class="auth-container">
     <div class="auth-box">
-      <h4>📝 Reģistrācija</h4>
+      <h4>Reģistrācija</h4>
       <input id="reg-username" placeholder="Lietotājvārds" />
       <input id="reg-password" type="password" placeholder="Parole" />
       <button id="btn-register">Reģistrēt</button>
     </div>
     <div class="auth-box">
-      <h4>🔐 Pieslēgšanās</h4>
+      <h4> Pieslēgšanās</h4>
       <input id="login-username" placeholder="Lietotājvārds" />
       <input id="login-password" type="password" placeholder="Parole" />
       <div class="auth-buttons">
@@ -58,7 +58,7 @@
 
   <!-- Admin Panel -->
   <section id="admin-section" style="display:none;margin-top:40px;border-top:2px solid #ddd;padding-top:20px;">
-    <h2>🔐 Admin panelis</h2>
+    <h2>Admin panelis</h2>
 
     <h3>Pievienot / Rediģēt grāmatu</h3>
     <input id="book-id" type="hidden" />
@@ -88,7 +88,7 @@
   // ja jau pieslēgts
   if(currentU){
     logoutBtn.style.display='inline';
-    userDisplay.textContent = `✅ Pieslēgts kā: ${currentU.username}`;
+    userDisplay.textContent = ` Pieslēgts kā: ${currentU.username}`;
     if(currentU.role==='admin') adminSec.style.display='block';
     renderBooksAdmin();
   }
@@ -112,12 +112,12 @@
     const p = document.getElementById('login-password').value;
     try{
       const result = await loginUser(u,p);
-      alert('Pieslēgts ✅');
+      alert('Pieslēgts ');
       loginBtn.disabled=false;
       document.getElementById('login-username').value='';
       document.getElementById('login-password').value='';
       logoutBtn.style.display='inline';
-      userDisplay.textContent = `✅ Pieslēgts kā: ${result.user.username}`;
+      userDisplay.textContent = ` Pieslēgts kā: ${result.user.username}`;
       if(result.user.role==='admin') adminSec.style.display='block';
       renderBooksAdmin();
       renderBooksUser('');
@@ -147,7 +147,7 @@
     if(!title||!author){alert('Ievadi nosaukumu un autoru'); return;}
     const btnAdd = document.getElementById('btn-add');
     const origText = btnAdd.textContent;
-    btnAdd.textContent='⏳ Saglabā...'; btnAdd.disabled=true;
+    btnAdd.textContent=' Saglabā...'; btnAdd.disabled=true;
     try{
       if(file){
         if(file.size>4000000){alert('Attēls pārāk liels'); btnAdd.textContent=origText; btnAdd.disabled=false; return;}
@@ -155,7 +155,7 @@
       }
       if(id){ await updateBook(id,{title,author,isbn,image:img}); }
       else{ await addBook({title,author,isbn,image:img}); }
-      alert('Grāmata saglabāta ✅');
+      alert('Grāmata saglabāta ');
       document.getElementById('book-id').value='';
       document.getElementById('title').value='';
       document.getElementById('author').value='';
