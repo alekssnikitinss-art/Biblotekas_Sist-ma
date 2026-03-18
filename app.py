@@ -1,17 +1,21 @@
 """
 Bibliotēka Library Management System - Flask Backend
-Uses PostgreSQL with psycopg 3.x (Python 3.13 compatible)
+Uses PostgreSQL with psycopg 3.x
 """
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import psycopg
 import os
-from datetime import datetime
 import bcrypt
+import base64
 
 # Database configuration from environment variables
-DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@localhost:5432/biblioteka')
+DATABASE_URL = os.getenv(
+    'DATABASE_URL',
+    'postgresql://postgres:postgres@localhost:5432/biblioteka'
+)
+
 
 def get_db_connection():
     """Get a database connection"""
@@ -22,13 +26,14 @@ def get_db_connection():
         print(f"Database connection error: {e}")
         return None
 
+
 def init_db():
     """Initialize database schema"""
     conn = get_db_connection()
     if not conn:
         print("Could not connect to database")
         return False
-    
+
     try:
         # Create users table
         conn.execute('''
@@ -40,7 +45,7 @@ def init_db():
                 created_at TIMESTAMP DEFAULT NOW()
             )
         ''')
-        
+
         # Create books table
         conn.execute('''
             CREATE TABLE IF NOT EXISTS books (
@@ -54,7 +59,7 @@ def init_db():
                 created_at TIMESTAMP DEFAULT NOW()
             )
         ''')
-        
+
         # Create loans table
         conn.execute('''
             CREATE TABLE IF NOT EXISTS loans (
@@ -66,37 +71,41 @@ def init_db():
                 created_at TIMESTAMP DEFAULT NOW()
             )
         ''')
-        
+
         # Create admin user if not exists
         hashed_admin = bcrypt.hashpw(b'admin', bcrypt.gensalt()).decode('utf-8')
-        
-        # Check if admin exists
-        cursor = conn.execute('SELECT id FROM users WHERE username = %s', ('admin',))
+
+        cursor = conn.execute(
+            'SELECT id FROM users WHERE username = %s',
+            ('admin',)
+        )
         admin_exists = cursor.fetchone()
-        
+
         if not admin_exists:
             conn.execute('''
                 INSERT INTO users (username, password, role)
                 VALUES (%s, %s, %s)
             ''', ('admin', hashed_admin, 'admin'))
-        
+
         conn.commit()
         print("✅ Database schema initialized successfully")
         return True
+
     except Exception as e:
         print(f"Error initializing database: {e}")
         conn.rollback()
         return False
+
     finally:
         conn.close()
 
-# INITIALIZE DATABASE ON STARTUP (BEFORE Flask app)
+
 print("Initializing database...")
 init_db()
 
-# CREATE FLASK APP (AFTER init_db)
 app = Flask(__name__)
 CORS(app)
+
 
 # ============================================================================
 # AUTHENTICATION ENDPOINTS
@@ -106,30 +115,35 @@ CORS(app)
 def register():
     """Register a new user"""
     try:
-        data = request.json
+        data = request.json or {}
         username = data.get('username', '').strip()
         password = data.get('password', '').strip()
-        
+
         if not username or not password:
             return jsonify({'error': 'Username and password required'}), 400
-        
+
         if len(password) < 3:
             return jsonify({'error': 'Password must be at least 3 characters'}), 400
-        
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-        
+
+        hashed_password = bcrypt.hashpw(
+            password.encode('utf-8'),
+            bcrypt.gensalt()
+        ).decode('utf-8')
+
         conn = get_db_connection()
-        
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+
         try:
             cursor = conn.execute('''
                 INSERT INTO users (username, password, role)
                 VALUES (%s, %s, %s)
                 RETURNING id, username, role
             ''', (username, hashed_password, 'user'))
-            
+
             user = cursor.fetchone()
             conn.commit()
-            
+
             return jsonify({
                 'success': True,
                 'message': 'User registered successfully',
@@ -139,38 +153,51 @@ def register():
                     'role': user[2]
                 }
             }), 201
+
         except psycopg.IntegrityError:
             conn.rollback()
             return jsonify({'error': 'Username already exists'}), 400
+
         finally:
             conn.close()
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     """Login user"""
     try:
-        data = request.json
+        data = request.json or {}
         username = data.get('username', '').strip()
         password = data.get('password', '').strip()
-        
+
         if not username or not password:
             return jsonify({'error': 'Username and password required'}), 400
-        
+
         conn = get_db_connection()
-        cursor = conn.execute('SELECT id, username, password, role FROM users WHERE username = %s', (username,))
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+
+        cursor = conn.execute(
+            'SELECT id, username, password, role FROM users WHERE username = %s',
+            (username,)
+        )
         user = cursor.fetchone()
         conn.close()
-        
+
         if not user:
             return jsonify({'error': 'Invalid credentials'}), 401
-        
+
         user_id, user_name, stored_pass, user_role = user
-        
-        if not bcrypt.checkpw(password.encode('utf-8'), stored_pass.encode('utf-8')):
+
+        if not bcrypt.checkpw(
+            password.encode('utf-8'),
+            stored_pass.encode('utf-8')
+        ):
             return jsonify({'error': 'Invalid credentials'}), 401
-        
+
         return jsonify({
             'success': True,
             'user': {
@@ -179,8 +206,10 @@ def login():
                 'role': user_role
             }
         }), 200
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 # ============================================================================
 # BOOK ENDPOINTS
@@ -191,9 +220,10 @@ def get_books():
     """Get all books with optional search"""
     try:
         search = request.args.get('search', '').strip().lower()
-        
         conn = get_db_connection()
-        
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+
         if search:
             cursor = conn.execute('''
                 SELECT id, title, author, isbn, status, image, reserved_by
@@ -207,12 +237,10 @@ def get_books():
                 FROM books
                 ORDER BY created_at DESC
             ''')
-        
+
         books = cursor.fetchall()
         conn.close()
-        
-        # Convert to list of dicts and handle images
-        import base64
+
         books_list = []
         for book in books:
             book_data = {
@@ -224,31 +252,36 @@ def get_books():
                 'image': None,
                 'reserved_by': book[6]
             }
-            if book[5]:  # image bytes
-                book_data['image'] = 'data:image/jpeg;base64,' + base64.b64encode(book[5]).decode('utf-8')
+
+            if book[5]:
+                book_data['image'] = (
+                    'data:image/jpeg;base64,' +
+                    base64.b64encode(book[5]).decode('utf-8')
+                )
+
             books_list.append(book_data)
-        
+
         return jsonify(books_list), 200
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/books', methods=['POST'])
 def create_book():
     """Create a new book"""
     try:
-        data = request.json
+        data = request.json or {}
         title = data.get('title', '').strip()
         author = data.get('author', '').strip()
         isbn = data.get('isbn', '').strip()
-        image = data.get('image')  # Base64 string
-        
+        image = data.get('image')
+
         if not title or not author:
             return jsonify({'error': 'Title and author are required'}), 400
-        
-        # Convert base64 image to bytes
+
         image_bytes = None
         if image:
-            import base64
             try:
                 if image.startswith('data:image'):
                     image_bytes = base64.b64decode(image.split(',')[1])
@@ -257,18 +290,21 @@ def create_book():
             except Exception as e:
                 print(f"Image decode error: {e}")
                 image_bytes = None
-        
+
         conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+
         cursor = conn.execute('''
             INSERT INTO books (title, author, isbn, status, image)
             VALUES (%s, %s, %s, %s, %s)
             RETURNING id, title, author, isbn, status
         ''', (title, author, isbn or None, 'available', image_bytes))
-        
+
         book = cursor.fetchone()
         conn.commit()
         conn.close()
-        
+
         return jsonify({
             'success': True,
             'book': {
@@ -281,41 +317,48 @@ def create_book():
                 'reserved_by': None
             }
         }), 201
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/books/<int:book_id>', methods=['PUT'])
 def update_book(book_id):
     """Update a book"""
     try:
-        data = request.json
+        data = request.json or {}
         title = data.get('title', '').strip()
         author = data.get('author', '').strip()
         isbn = data.get('isbn', '').strip()
         image = data.get('image')
-        
+
+        if not title or not author:
+            return jsonify({'error': 'Title and author are required'}), 400
+
         conn = get_db_connection()
-        
-        # Check if book exists
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+
         cursor = conn.execute('SELECT id FROM books WHERE id = %s', (book_id,))
         if not cursor.fetchone():
             conn.close()
             return jsonify({'error': 'Book not found'}), 404
-        
-        # Handle image update
+
         image_bytes = None
+        has_new_image = False
+
         if image:
-            import base64
             try:
                 if image.startswith('data:image'):
                     image_bytes = base64.b64decode(image.split(',')[1])
                 else:
                     image_bytes = base64.b64decode(image)
-            except:
+                has_new_image = True
+            except Exception:
                 image_bytes = None
-        
-        # Update book
-        if image_bytes is not None:
+                has_new_image = False
+
+        if has_new_image:
             cursor = conn.execute('''
                 UPDATE books
                 SET title = %s, author = %s, isbn = %s, image = %s
@@ -329,11 +372,11 @@ def update_book(book_id):
                 WHERE id = %s
                 RETURNING id, title, author, isbn, status
             ''', (title, author, isbn or None, book_id))
-        
+
         book = cursor.fetchone()
         conn.commit()
         conn.close()
-        
+
         return jsonify({
             'success': True,
             'book': {
@@ -344,27 +387,36 @@ def update_book(book_id):
                 'status': book[4]
             }
         }), 200
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/books/<int:book_id>', methods=['DELETE'])
 def delete_book(book_id):
     """Delete a book"""
     try:
         conn = get_db_connection()
-        
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+
         cursor = conn.execute('SELECT id FROM books WHERE id = %s', (book_id,))
         if not cursor.fetchone():
             conn.close()
             return jsonify({'error': 'Book not found'}), 404
-        
+
         conn.execute('DELETE FROM books WHERE id = %s', (book_id,))
         conn.commit()
         conn.close()
-        
-        return jsonify({'success': True, 'message': 'Book deleted'}), 200
+
+        return jsonify({
+            'success': True,
+            'message': 'Book deleted'
+        }), 200
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 # ============================================================================
 # BOOK ACTIONS (Reserve, Borrow, Return)
@@ -374,110 +426,18 @@ def delete_book(book_id):
 def reserve_book(book_id):
     """Reserve a book"""
     try:
-        data = request.json
-        username = data.get('username')
-        
-        if not username:
-            return jsonify({'error': 'Username required'}), 400
-        
-        conn = get_db_connection()
-        
-        # Get user ID
-        cursor = conn.execute('SELECT id FROM users WHERE username = %s', (username,))
-        user = cursor.fetchone()
-        if not user:
-            conn.close()
-            return jsonify({'error': 'User not found'}), 404
-        user_id = user[0]
-        
-        # Check book status
-        cursor = conn.execute('SELECT status FROM books WHERE id = %s', (book_id,))
-        book = cursor.fetchone()
-        if not book:
-            conn.close()
-            return jsonify({'error': 'Book not found'}), 404
-        
-        if book[0] != 'available':
-            conn.close()
-            return jsonify({'error': 'Book is not available'}), 400
-        
-        # Reserve book
-        conn.execute('''
-            UPDATE books
-            SET status = %s, reserved_by = %s
-            WHERE id = %s
-        ''', ('reserved', user_id, book_id))
-        
-        conn.commit()
-        conn.close()
-        
-        return jsonify({'success': True, 'message': 'Book reserved'}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/books/<int:book_id>/borrow', methods=['POST'])
-def borrow_book(book_id):
-    """Borrow a book"""
-    try:
-        data = request.json
-        username = data.get('username')
-        
-        if not username:
-            return jsonify({'error': 'Username required'}), 400
-        
-        conn = get_db_connection()
-        
-        # Get user ID
-        cursor = conn.execute('SELECT id FROM users WHERE username = %s', (username,))
-        user = cursor.fetchone()
-        if not user:
-            conn.close()
-            return jsonify({'error': 'User not found'}), 404
-        user_id = user[0]
-        
-        # Check book status
-        cursor = conn.execute('SELECT status, reserved_by FROM books WHERE id = %s', (book_id,))
-        book = cursor.fetchone()
-        if not book:
-            conn.close()
-            return jsonify({'error': 'Book not found'}), 404
-        
-        status, reserved_by = book
-        if status == 'available' or (status == 'reserved' and reserved_by == user_id):
-            conn.execute('''
-                UPDATE books
-                SET status = %s, reserved_by = %s
-                WHERE id = %s
-            ''', ('borrowed', user_id, book_id))
-            
-            # Create loan record
-            conn.execute('''
-                INSERT INTO loans (book_id, user_id)
-                VALUES (%s, %s)
-            ''', (book_id, user_id))
-            
-            conn.commit()
-            conn.close()
-            return jsonify({'success': True, 'message': 'Book borrowed'}), 200
-        else:
-            conn.close()
-            return jsonify({'error': 'Cannot borrow this book'}), 400
-
-@app.route('/api/books/<int:book_id>/return', methods=['POST'])
-def return_book(book_id):
-    """Return a book"""
-    try:
-        data = request.json
+        data = request.json or {}
         username = data.get('username')
 
         if not username:
             return jsonify({'error': 'Username required'}), 400
 
         conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
 
-        # Dabū user id un role
         cursor = conn.execute(
-            'SELECT id, role FROM users WHERE username = %s',
+            'SELECT id FROM users WHERE username = %s',
             (username,)
         )
         user = cursor.fetchone()
@@ -486,9 +446,66 @@ def return_book(book_id):
             conn.close()
             return jsonify({'error': 'User not found'}), 404
 
-        user_id, user_role = user
+        user_id = user[0]
 
-        # Dabū grāmatas statusu un reserved_by
+        cursor = conn.execute(
+            'SELECT status FROM books WHERE id = %s',
+            (book_id,)
+        )
+        book = cursor.fetchone()
+
+        if not book:
+            conn.close()
+            return jsonify({'error': 'Book not found'}), 404
+
+        if book[0] != 'available':
+            conn.close()
+            return jsonify({'error': 'Book is not available'}), 400
+
+        conn.execute('''
+            UPDATE books
+            SET status = %s, reserved_by = %s
+            WHERE id = %s
+        ''', ('reserved', user_id, book_id))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({
+            'success': True,
+            'message': 'Book reserved'
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/books/<int:book_id>/borrow', methods=['POST'])
+def borrow_book(book_id):
+    """Borrow a book"""
+    try:
+        data = request.json or {}
+        username = data.get('username')
+
+        if not username:
+            return jsonify({'error': 'Username required'}), 400
+
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+
+        cursor = conn.execute(
+            'SELECT id FROM users WHERE username = %s',
+            (username,)
+        )
+        user = cursor.fetchone()
+
+        if not user:
+            conn.close()
+            return jsonify({'error': 'User not found'}), 404
+
+        user_id = user[0]
+
         cursor = conn.execute(
             'SELECT status, reserved_by FROM books WHERE id = %s',
             (book_id,)
@@ -501,8 +518,75 @@ def return_book(book_id):
 
         status, reserved_by = book
 
-        # User var atgriezt savu borrowed grāmatu
-        # Admin var atgriezt jebkuru borrowed grāmatu
+        if status == 'available' or (status == 'reserved' and reserved_by == user_id):
+            conn.execute('''
+                UPDATE books
+                SET status = %s, reserved_by = %s
+                WHERE id = %s
+            ''', ('borrowed', user_id, book_id))
+
+            conn.execute('''
+                INSERT INTO loans (book_id, user_id)
+                VALUES (%s, %s)
+            ''', (book_id, user_id))
+
+            conn.commit()
+            conn.close()
+
+            return jsonify({
+                'success': True,
+                'message': 'Book borrowed'
+            }), 200
+
+        conn.close()
+        return jsonify({'error': 'Cannot borrow this book'}), 400
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/books/<int:book_id>/return', methods=['POST'])
+def return_book(book_id):
+    """Return a book"""
+    try:
+        data = request.json or {}
+        username = data.get('username')
+
+        if not username:
+            return jsonify({'error': 'Username required'}), 400
+
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'error': 'Database connection failed'}), 500
+
+        # Get user ID and role
+        cursor = conn.execute(
+            'SELECT id, role FROM users WHERE username = %s',
+            (username,)
+        )
+        user = cursor.fetchone()
+
+        if not user:
+            conn.close()
+            return jsonify({'error': 'User not found'}), 404
+
+        user_id, user_role = user
+
+        # Check book
+        cursor = conn.execute(
+            'SELECT status, reserved_by FROM books WHERE id = %s',
+            (book_id,)
+        )
+        book = cursor.fetchone()
+
+        if not book:
+            conn.close()
+            return jsonify({'error': 'Book not found'}), 404
+
+        status, reserved_by = book
+
+        # User can return own borrowed book
+        # Admin can return any borrowed book
         if status == 'borrowed' and (reserved_by == user_id or user_role == 'admin'):
             conn.execute('''
                 UPDATE books
@@ -510,7 +594,6 @@ def return_book(book_id):
                 WHERE id = %s
             ''', ('available', book_id))
 
-            # Aizver aktīvo loan ierakstu īstajam aizņēmējam
             conn.execute('''
                 UPDATE loans
                 SET returned_at = NOW()
@@ -530,6 +613,8 @@ def return_book(book_id):
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
 # ============================================================================
 # HEALTH CHECK
 # ============================================================================
@@ -540,12 +625,19 @@ def health():
     conn = get_db_connection()
     if conn:
         conn.close()
-        return jsonify({'status': 'healthy', 'database': 'connected'}), 200
-    else:
-        return jsonify({'status': 'unhealthy', 'database': 'disconnected'}), 500
+        return jsonify({
+            'status': 'healthy',
+            'database': 'connected'
+        }), 200
+
+    return jsonify({
+        'status': 'unhealthy',
+        'database': 'disconnected'
+    }), 500
+
 
 # ============================================================================
-# STARTUP (only for local development)
+# STARTUP
 # ============================================================================
 
 if __name__ == '__main__':
